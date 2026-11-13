@@ -43,6 +43,10 @@ Atdev OS Hub is planned as a Git client and repository administration interface 
 
 Void Memingo OS Builder projects (starting with PondOS) will publish manifests, build provenance and release metadata to OS Hub. The database foundation is in place; OAuth callbacks, provider API adapters, Edge Functions and the desktop sync client are still required before end-to-end operation.
 
+## Git Center
+
+Git Center connects GitHub and GitLab accounts separately from OS Hub sign-in, imports repositories, and browses branches and commit history. Provider OAuth setup is documented in [Git provider setup](docs/GIT_PROVIDER_SETUP.md). GitVoid is experimental. The first UI milestone is read-only; repository writes require separately configured least-privilege permissions and confirmation flows.
+
 ## GitHub Actions
 
 El workflow de CI instala dependencias, ejecuta TypeScript y construye la aplicación. No necesita credenciales Supabase para compilar.
