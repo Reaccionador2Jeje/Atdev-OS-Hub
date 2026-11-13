@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { ArrowUpRight, CheckCircle2, Download, Github, Leaf, LogOut, Plus, Search, ShieldCheck, Sprout } from 'lucide-react';
+import GitCenter from './components/GitCenter';
 
 type OsProject = {
   id: string;
@@ -97,6 +98,16 @@ function App() {
 
   useEffect(() => { void loadProjects(); }, [loadProjects]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connection = params.get('git_connection');
+    const providerMessage = params.get('provider_message');
+    if (connection) {
+      setNotice(providerMessage || (connection === 'connected' ? 'Proveedor Git conectado.' : 'No se pudo conectar el proveedor Git.'));
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    }
+  }, []);
+
   const visibleProjects = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return projects;
@@ -191,7 +202,7 @@ function App() {
     <div className="hub-shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-mark"><Leaf size={20} /></span><span>atdev<span className="brand-light"> / os hub</span></span></a>
-        <nav><a href="#explore">Explorar</a><a href="#about">Acerca del Hub</a></nav>
+        <nav><a href="#explore">Explorar</a><a href="#git-center">Git Center</a><a href="#about">Acerca del Hub</a></nav>
         <div className="account-actions">
           {user ? (
             <>
@@ -226,6 +237,8 @@ function App() {
             <div className="pond-caption">OPEN SOURCE · OPEN SYSTEMS</div>
           </div>
         </section>
+
+        <GitCenter supabase={supabase} user={user} />
 
         <section id="explore" className="catalog-section">
           <div className="section-heading">
