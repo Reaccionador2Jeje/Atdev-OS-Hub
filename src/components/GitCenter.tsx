@@ -12,6 +12,7 @@ type Connection = {
   status: string;
   scopes: string[];
 };
+type ApiToken = { id: string; label: string; token_prefix: string; scopes: string[]; expires_at: string | null; last_used_at: string | null; revoked_at: string | null; created_at: string };
 type Repository = {
   id: string;
   provider: 'github' | 'gitlab' | 'gitvoid';
@@ -44,6 +45,9 @@ export default function GitCenter({ supabase, user }: Props) {
   const [branch, setBranch] = useState('');
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
+  const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
+  const [tokenLabel, setTokenLabel] = useState('Void Memingo Desktop');
+  const [newToken, setNewToken] = useState('');
 
   const invoke = useCallback(async (body: Record<string, unknown>) => {
     if (!supabase) throw new Error('Supabase no está configurado.');
@@ -61,12 +65,17 @@ export default function GitCenter({ supabase, user }: Props) {
     }
     setBusy('load');
     try {
-      const [connectionData, repositoryData] = await Promise.all([
+      const [connectionData, repositoryData, tokenResult] = await Promise.all([
         invoke({ action: 'list_connections' }),
-        invoke({ action: 'list_repositories' })
+        invoke({ action: 'list_repositories' }),
+        supabase.from('os_hub_api_tokens')
+          .select('id,label,token_prefix,scopes,expires_at,last_used_at,revoked_at,created_at')
+          .eq('owner_id', user.id).order('created_at', { ascending: false })
       ]);
+      if (tokenResult.error) throw tokenResult.error;
       setConnections(connectionData.connections ?? []);
       setRepositories(repositoryData.repositories ?? []);
+      setApiTokens((tokenResult.data ?? []) as ApiToken[]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo cargar Git Center.');
     } finally {
@@ -87,6 +96,62 @@ export default function GitCenter({ supabase, user }: Props) {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo iniciar la conexión.');
       setBusy('');
+    }
+  };
+
+  const createApiToken = async () => {
+    if (!supabase || !user || !tokenLabel.trim()) return;
+    setBusy('token');
+    setMessage('');
+    setNewToken('');
+    try {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      const encoded = btoa(String.fromCharCode(...bytes)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
+      const raw = 'atdev_os_hub_' + encoded;
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+      const hash = Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('');
+      const { error } = await supabase.from('os_hub_api_tokens').insert({
+        owner_id: user.id,
+        label: tokenLabel.trim().slice(0, 80),
+        token_prefix: raw.slice(0, 24),
+        token_hash: hash,
+        scopes: ['os:publish', 'build:submit'],
+        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      });
+      if (error) throw error;
+      setNewToken(raw);
+      setMessage('Token creado. Cópialo ahora: solo se muestra una vez.');
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo crear el token.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const revokeApiToken = async (tokenId: string) => {
+    if (!supabase || !user) return;
+    setBusy('revoke-' + tokenId);
+    try {
+      const { error } = await supabase.from('os_hub_api_tokens')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', tokenId).eq('owner_id', user.id);
+      if (error) throw error;
+      setMessage('Token revocado.');
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo revocar el token.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const copyToken = async () => {
+    try {
+      await navigator.clipboard.writeText(newToken);
+      setMessage('Token copiado. Guárdalo en un lugar seguro.');
+    } catch {
+      setMessage('No se pudo copiar automáticamente. Selecciona el token y cópialo.');
     }
   };
 
@@ -192,6 +257,35 @@ export default function GitCenter({ supabase, user }: Props) {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="git-panel git-token-panel">
+            <div className="git-panel-heading">
+              <div><h3>Void Memingo · Acceso API</h3><span>Permite publicar proyectos y registrar compilaciones desde el OS Builder.</span></div>
+              <LockKeyhole size={18} />
+            </div>
+            <div className="git-token-create">
+              <input value={tokenLabel} onChange={(event) => setTokenLabel(event.target.value)} maxLength={80} aria-label="Nombre del token" placeholder="Nombre del token" />
+              <button onClick={() => void createApiToken()} disabled={busy !== '' || !tokenLabel.trim()}>{busy === 'token' ? 'Creando…' : 'Crear token'}</button>
+            </div>
+            {newToken && (
+              <div className="git-token-once">
+                <strong>Token nuevo — copia ahora, no volverá a mostrarse</strong>
+                <code>{newToken}</code>
+                <button onClick={() => void copyToken()}>Copiar token</button>
+              </div>
+            )}
+            <div className="git-token-list">
+              {apiTokens.map((token) => (
+                <div className="git-token-row" key={token.id}>
+                  <div><strong>{token.label}</strong><small>{token.token_prefix}… · {token.scopes.join(', ')}</small></div>
+                  <span className={token.revoked_at ? 'git-token-revoked' : 'git-connected'}>{token.revoked_at ? 'Revocado' : token.expires_at && new Date(token.expires_at) < new Date() ? 'Vencido' : 'Activo'}</span>
+                  {!token.revoked_at && <button onClick={() => void revokeApiToken(token.id)} disabled={busy !== ''}>Revocar</button>}
+                </div>
+              ))}
+              {apiTokens.length === 0 && <div className="git-panel-empty">Todavía no hay tokens de Void Memingo.</div>}
+            </div>
+            <p className="git-token-help">El token solo se muestra una vez y se guarda como hash. No lo compartas ni lo incluyas en void-os.toml o en Git.</p>
           </div>
 
           {selected && (
