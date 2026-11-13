@@ -6,7 +6,6 @@ Git Center is deployed, but external provider OAuth credentials must be configur
 
 Open Supabase Dashboard → Edge Functions → Secrets for project `pzfvpvioxpcjkxdawnsq` and add:
 
-- `OAUTH_STATE_SECRET`: a newly generated random secret with at least 32 random bytes.
 - `APP_ALLOWED_ORIGINS`: comma-separated exact origins allowed after OAuth, for example `http://127.0.0.1:4173,http://localhost:4173`. Add the real HTTPS OS Hub domain when deployed.
 - `GITHUB_APP_CLIENT_ID`: GitHub App client ID.
 - `GITHUB_APP_CLIENT_SECRET`: GitHub App client secret.
@@ -56,7 +55,7 @@ The existing “Sign in with GitHub” button authenticates a user account in Su
 - Git provider callback: `/functions/v1/git-oauth-callback`
 - Authenticated Git API: `/functions/v1/git-provider`
 
-The callback validates a signed, short-lived OAuth state. GitLab authorization uses PKCE. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser.
+The callback validates and consumes a random, one-time, ten-minute OAuth state stored server-side. GitLab authorization uses PKCE; its verifier is kept in the private database state record, never in the browser URL. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser.
 
 ## GitVoid
 
