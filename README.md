@@ -47,6 +47,10 @@ Void Memingo OS Builder projects (starting with PondOS) can publish project mani
 
 Git Center connects GitHub and GitLab accounts separately from OS Hub sign-in, imports repositories, and browses branches, commits and text files. Provider OAuth setup is documented in [OAuth setup](docs/OAUTH_SETUP.md) and [Git provider setup](docs/GIT_PROVIDER_SETUP.md). GitVoid is experimental. The current repository browser is read-only; write operations require separately configured least-privilege permissions and confirmation flows. Git Center also manages scoped, one-time-display API tokens for Void Memingo.
 
+## Deploy
+
+The frontend can be deployed to Cloudflare Pages. See [Deployment guide](docs/DEPLOYMENT.md) for build settings, environment variables and production OAuth redirects.
+
 ## GitHub Actions
 
 El workflow de CI instala dependencias, ejecuta TypeScript y construye la aplicación. No necesita credenciales Supabase para compilar.
