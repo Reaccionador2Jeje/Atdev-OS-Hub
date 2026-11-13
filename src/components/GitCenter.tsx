@@ -93,6 +93,7 @@ export default function GitCenter({ supabase, user }: Props) {
   useEffect(() => { void load(); }, [load]);
 
   const selected = useMemo(() => repositories.find((item) => item.id === selectedId) ?? null, [repositories, selectedId]);
+  const connectedProviders = useMemo(() => new Set(connections.filter((item) => item.status === 'connected').map((item) => item.provider)), [connections]);
 
   const connect = async (provider: 'github' | 'gitlab') => {
     setBusy(provider);
@@ -224,13 +225,13 @@ export default function GitCenter({ supabase, user }: Props) {
           <div className="git-provider-grid">
             <article className="git-provider-card">
               <div className="git-provider-icon"><Github size={24} /></div>
-              <div className="git-provider-copy"><strong>GitHub</strong><span>Repositorios, ramas y commits</span></div>
-              <button disabled={!supabase || busy === 'github'} onClick={() => void connect('github')}>{busy === 'github' ? 'Conectando…' : 'Conectar'}</button>
+              <div className="git-provider-copy"><strong>GitHub</strong><span>Repositorios, ramas y commits</span>{connectedProviders.has('github') && <small className="git-connected">Cuenta vinculada</small>}</div>
+              <button disabled={!supabase || busy === 'github'} onClick={() => void connect('github')}>{busy === 'github' ? 'Conectando…' : connectedProviders.has('github') ? 'Reconectar' : 'Conectar'}</button>
             </article>
             <article className="git-provider-card">
               <div className="git-provider-icon gitlab-icon"><GitBranch size={24} /></div>
-              <div className="git-provider-copy"><strong>GitLab</strong><span>Repositorios, ramas y commits</span></div>
-              <button disabled={!supabase || busy === 'gitlab'} onClick={() => void connect('gitlab')}>{busy === 'gitlab' ? 'Conectando…' : 'Conectar'}</button>
+              <div className="git-provider-copy"><strong>GitLab</strong><span>Repositorios, ramas y commits</span>{connectedProviders.has('gitlab') && <small className="git-connected">Cuenta vinculada</small>}</div>
+              <button disabled={!supabase || busy === 'gitlab'} onClick={() => void connect('gitlab')}>{busy === 'gitlab' ? 'Conectando…' : connectedProviders.has('gitlab') ? 'Reconectar' : 'Conectar'}</button>
             </article>
             <article className="git-provider-card git-provider-experimental">
               <div className="git-provider-icon"><GitBranch size={24} /></div>
