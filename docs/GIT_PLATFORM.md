@@ -6,8 +6,8 @@ Atdev OS Hub is both an operating-system project catalogue and a Git client/admi
 
 | Provider | Target capability | Current state |
 |---|---|---|
-| GitHub | Repositories, files, branches, commits, pull requests, releases, authorized push/admin actions | App credentials and server adapter still required |
-| GitLab | Repositories, files, branches, commits, merge requests, releases, authorized push/admin actions | OAuth credentials and server adapter still required |
+| GitHub | Repository import, files, branches, commits, branch creation and file commits | OAuth credentials required; browser UI currently exposes read-only browsing |
+| GitLab | Repository import, files, branches, commits, branch creation and file commits | OAuth credentials required; GitLab adapter implemented, browser UI currently exposes read-only browsing |
 | GitVoid | Native Atdev Git hosting and repository administration | Experimental; protocol/API is not complete |
 
 Supabase GitHub/Google sign-in authenticates an OS Hub identity only. It does not authorize Git operations. GitHub repository access should use a GitHub App with minimum repository permissions. GitLab should use scopes selected for exact operations, beginning read-only and adding write access only when users enable it.
@@ -38,4 +38,4 @@ PondOS is the first example project for this flow. It remains in Void Memingo's 
 
 ## Database
 
-The additive migration is supabase/migrations/20261113000000_git_provider_and_void_memingo_integration.sql. It creates provider connections, imported repositories, OS project links, Void Memingo integration records and build provenance. It does not implement OAuth callbacks or the Git API adapter by itself.
+The additive migration is supabase/migrations/20261113000000_git_provider_and_void_memingo_integration.sql. It creates provider connections, imported repositories, OS project links, Void Memingo integration records and build provenance. The GitLab OAuth callback and provider API adapter are implemented in Supabase Edge Functions. GitLab OAuth client credentials still need to be registered and configured by the project owner.
