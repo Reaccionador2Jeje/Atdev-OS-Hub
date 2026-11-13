@@ -37,6 +37,12 @@ En Supabase:
 
 La aplicación no contiene secretos OAuth. Los Client Secret se guardan exclusivamente en la configuración de Auth de Supabase.
 
+## Git platform and Void Memingo
+
+Atdev OS Hub is planned as a Git client and repository administration interface for GitHub, GitLab and the experimental GitVoid provider. See [Git platform architecture](docs/GIT_PLATFORM.md) and [Void Memingo integration](docs/VOID_MEMINGO_INTEGRATION.md). Provider OAuth tokens are stored in Supabase Vault and accessed only by trusted server-side functions. GitVoid remains experimental until its protocol/API is complete.
+
+Void Memingo OS Builder projects (starting with PondOS) will publish manifests, build provenance and release metadata to OS Hub. The database foundation is in place; OAuth callbacks, provider API adapters, Edge Functions and the desktop sync client are still required before end-to-end operation.
+
 ## GitHub Actions
 
 El workflow de CI instala dependencias, ejecuta TypeScript y construye la aplicación. No necesita credenciales Supabase para compilar.
