@@ -86,3 +86,23 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .git-security-note svg{flex:none;color:#4c8157}
 @media(max-width:900px){.git-provider-grid{grid-template-columns:1fr}.git-dashboard-grid{grid-template-columns:1fr}.git-center-heading{align-items:flex-start;flex-direction:column}.git-inspector-columns{grid-template-columns:1fr}}
 @media(max-width:560px){.git-center-section{padding:54px 5vw}.git-connection-row{flex-wrap:wrap}.git-sync-button{margin-left:44px}.git-repo-visibility{display:none}.git-panel{padding:15px}}
+
+
+.git-token-panel{margin-top:16px}
+.git-token-create{display:flex;gap:10px;margin-bottom:14px}
+.git-token-create input{flex:1;min-width:0;border:1px solid #dfe8df;border-radius:9px;padding:10px 12px;color:#344a39}
+.git-token-create button,.git-token-once button{border:0;border-radius:9px;background:#234c34;color:#fff;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer}
+.git-token-create button:disabled{opacity:.55;cursor:wait}
+.git-token-once{display:flex;flex-direction:column;gap:9px;padding:13px;margin:12px 0;border:1px solid #e9dcae;background:#fffbeb;border-radius:10px;color:#6e5b2c}
+.git-token-once strong{font-size:12px}
+.git-token-once code{font-size:11px;line-height:1.6;overflow-wrap:anywhere;color:#55451f}
+.git-token-once button{align-self:flex-start;background:#735d24}
+.git-token-list{display:flex;flex-direction:column}
+.git-token-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #edf1ed}
+.git-token-row>div{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.git-token-row strong{font-size:12px;color:#344a39}
+.git-token-row small{font-size:10px;color:#8a958c;overflow-wrap:anywhere}
+.git-token-row button{border:1px solid #ead5d5;background:#fff8f8;color:#9b4646;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer}
+.git-token-revoked{font-size:10px;color:#9b4646;background:#fff0f0;padding:5px 8px;border-radius:999px}
+.git-token-help{margin:12px 0 0;color:#8a958c;font-size:10px;line-height:1.5}
+@media(max-width:560px){.git-token-create{flex-direction:column}.git-token-row{flex-wrap:wrap}}
