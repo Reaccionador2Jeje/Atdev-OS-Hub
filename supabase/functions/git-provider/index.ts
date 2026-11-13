@@ -45,6 +45,12 @@ async function providerFetch(provider: string, token: string, path: string, init
   }
   return data;
 }
+function decodeBase64Utf8(value: string) {
+  const binary = atob(value.replace(/\s/g, ""));
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+}
+
 async function loadCredential(connectionId: string, userId: string) {
   const { data: connection, error: connectionError } = await admin
     .from("git_provider_connections").select("*").eq("id", connectionId)
@@ -168,7 +174,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "list_branches" || action === "list_commits" || action === "list_tree" ||
-        action === "create_branch" || action === "commit_file") {
+        action === "get_file" || action === "create_branch" || action === "commit_file") {
       const { data: repo, error } = await admin.from("git_repositories").select("*")
         .eq("id", String(body.repository_id ?? "")).eq("owner_id", user.id).maybeSingle();
       if (error || !repo) return fail("Repositorio no encontrado.", 404);
@@ -184,6 +190,15 @@ Deno.serve(async (req: Request) => {
           const branch = String(body.branch ?? repo.default_branch);
           const ref = await providerFetch(provider, access, base + "/git/ref/heads/" + encodeURIComponent(branch));
           return json({ items: await providerFetch(provider, access, base + "/git/trees/" + encodeURIComponent(ref.object.sha) + "?recursive=1") });
+        }
+        if (action === "get_file") {
+          const path = String(body.path ?? "").replace(/^\/+/, "");
+          const branch = String(body.branch ?? repo.default_branch);
+          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || path.length > 500) return fail("Ruta de archivo inválida.");
+          const file = await providerFetch(provider, access, base + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(branch));
+          if (file.type !== "file" || file.encoding !== "base64" || typeof file.content !== "string") return fail("El elemento no es un archivo de texto compatible.");
+          if (file.size > 1_000_000) return fail("El archivo supera el límite de vista previa de 1 MB.", 413);
+          return json({ path, content: decodeBase64Utf8(file.content) });
         }
         if (action === "create_branch") {
           const branch = String(body.branch ?? "").trim();
@@ -209,7 +224,16 @@ Deno.serve(async (req: Request) => {
         const base = "/projects/" + projectId;
         if (action === "list_branches") return json({ items: await providerFetch(provider, access, base + "/repository/branches?per_page=100") });
         if (action === "list_commits") return json({ items: await providerFetch(provider, access, base + "/repository/commits?ref_name=" + encodeURIComponent(String(body.branch ?? repo.default_branch)) + "&per_page=30") });
-        if (action === "list_tree") return json({ items: await providerFetch(provider, access, base + "/repository/tree?ref=" + encodeURIComponent(String(body.branch ?? repo.default_branch)) + "&per_page=100") });
+        if (action === "list_tree") return json({ items: await providerFetch(provider, access, base + "/repository/tree?recursive=true&ref=" + encodeURIComponent(String(body.branch ?? repo.default_branch)) + "&per_page=100") });
+        if (action === "get_file") {
+          const path = String(body.path ?? "").replace(/^\/+/, "");
+          const branch = String(body.branch ?? repo.default_branch);
+          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || path.length > 500) return fail("Ruta de archivo inválida.");
+          const file = await providerFetch(provider, access, base + "/repository/files/" + encodeURIComponent(path) + "?ref=" + encodeURIComponent(branch));
+          if (file.encoding !== "base64" || typeof file.content !== "string") return fail("El archivo no tiene contenido de texto compatible.");
+          if (file.size > 1_000_000) return fail("El archivo supera el límite de vista previa de 1 MB.", 413);
+          return json({ path, content: decodeBase64Utf8(file.content) });
+        }
         if (action === "create_branch") {
           const branch = String(body.branch ?? "").trim();
           if (!/^[A-Za-z0-9._/-]{1,100}$/.test(branch) || branch.startsWith("/") || branch.endsWith("/") || branch.includes("..")) return fail("Nombre de rama inválido.");
