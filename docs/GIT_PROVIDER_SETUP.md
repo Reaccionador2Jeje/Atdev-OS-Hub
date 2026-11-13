@@ -29,7 +29,7 @@ For the initial Git Center milestone, request only:
 
 Install the App only on repositories the account holder wants OS Hub to access, then add its client ID and client secret to Supabase Edge Function Secrets. User access tokens are limited by both the app's permissions and the user's own access.
 
-The current backend supports repository listing/sync, branches, commits and tree browsing. The UI intentionally remains read-only until write permissions and explicit confirmation UX are added.
+The backend supports repository listing/sync, branches, commits and tree browsing. It also contains branch-creation and file-commit API actions, but the browser UI does not expose write controls yet. Keep the OAuth scopes read-only until explicit write-permission and confirmation UX is implemented.
 
 ## GitLab OAuth application
 
