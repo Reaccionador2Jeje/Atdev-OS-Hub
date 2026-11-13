@@ -290,6 +290,11 @@ function App() {
       }
       createdProjectId = createdProject.id;
     }
+    if (!createdProjectId) {
+      setPublishing(false);
+      setNotice('No se pudo determinar el proyecto que se está guardando.');
+      return;
+    }
     if (hasReleaseArtifact) {
       const { error: releaseError } = await supabase.from('os_releases').insert({
         project_id: createdProjectId,
@@ -312,6 +317,15 @@ function App() {
     setName(''); setSlug(''); setSummary(''); setDescription(''); setSourceUrl('');
     setArtifactUrl(''); setArtifactSha256(''); setReleaseNotes('');
     await Promise.all([loadProjects(), loadMyProjects()]);
+  };
+
+  const startNewProject = () => {
+    setEditingProjectId(null);
+    setName(''); setSlug(''); setSummary(''); setDescription('');
+    setBase('ubuntu'); setDesktop('lxqt'); setArchitectures('x86_64'); setSourceUrl('');
+    setReleaseVersion('0.1.0'); setReleaseChannel('stable');
+    setArtifactUrl(''); setArtifactSha256(''); setReleaseNotes('');
+    setShowPublish(true);
   };
 
   const editProject = (project: OsProject) => {
@@ -365,7 +379,7 @@ function App() {
             <p>Descubre sistemas operativos creados por la comunidad, explora sus escritorios y encuentra proyectos abiertos para aprender y colaborar.</p>
             <div className="hero-actions">
               <a className="primary-link" href="#explore">Explorar sistemas <ArrowUpRight size={16} /></a>
-              <button className="quiet-link" onClick={() => user ? setShowPublish(true) : setNotice('Inicia sesión con GitHub o Google para publicar un sistema.')}>Publicar un sistema <Plus size={15} /></button>
+              <button className="quiet-link" onClick={() => user ? startNewProject() : setNotice('Inicia sesión con GitHub o Google para publicar un sistema.')}>Publicar un sistema <Plus size={15} /></button>
             </div>
             <div className="hero-trust"><ShieldCheck size={14} /> Proyectos con código fuente y checksums transparentes</div>
           </div>
@@ -381,7 +395,7 @@ function App() {
           <section id="my-projects" className="my-projects-section">
             <div className="section-heading">
               <div><div className="eyebrow">ESPACIO DE CREACIÓN</div><h2>Mis proyectos</h2><p>Administra tus sistemas operativos y sus publicaciones.</p></div>
-              <button className="publish-button" onClick={() => { setEditingProjectId(null); setShowPublish(true); }}><Plus size={16} /> Nuevo proyecto</button>
+              <button className="publish-button" onClick={() => startNewProject()}><Plus size={16} /> Nuevo proyecto</button>
             </div>
             {myProjects.length === 0 ? <div className="my-projects-empty">Todavía no has publicado proyectos. Crea el primero para compartirlo con la comunidad.</div> : (
               <div className="my-project-list">
@@ -404,7 +418,7 @@ function App() {
         <section id="explore" className="catalog-section">
           <div className="section-heading">
             <div><div className="eyebrow">CATÁLOGO COMUNITARIO</div><h2>Sistemas para descubrir</h2><p>Distribuciones, remixes y proyectos experimentales.</p></div>
-            <button className="publish-button" onClick={() => user ? setShowPublish(true) : setNotice('Inicia sesión con GitHub o Google para publicar.')}><Plus size={16} /> Publicar proyecto</button>
+            <button className="publish-button" onClick={() => user ? startNewProject() : setNotice('Inicia sesión con GitHub o Google para publicar.')}><Plus size={16} /> Publicar proyecto</button>
           </div>
           <div className="catalog-tools">
             <label className="search-box"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, base, escritorio o arquitectura..." /></label>
