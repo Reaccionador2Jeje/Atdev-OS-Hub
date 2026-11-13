@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import {
   ExternalLink, FolderGit2, GitBranch, GitCommitHorizontal, Github,
-  Gitlab, Link2, LockKeyhole, RefreshCw, ShieldCheck
+  GitBranch, Link2, LockKeyhole, RefreshCw, ShieldCheck
 } from 'lucide-react';
 
 type Connection = {
@@ -153,7 +153,7 @@ export default function GitCenter({ supabase, user }: Props) {
               <button disabled={!supabase || busy === 'github'} onClick={() => void connect('github')}>{busy === 'github' ? 'Conectando…' : 'Conectar'}</button>
             </article>
             <article className="git-provider-card">
-              <div className="git-provider-icon gitlab-icon"><Gitlab size={24} /></div>
+              <div className="git-provider-icon gitlab-icon"><GitBranch size={24} /></div>
               <div className="git-provider-copy"><strong>GitLab</strong><span>Repositorios, ramas y commits</span></div>
               <button disabled={!supabase || busy === 'gitlab'} onClick={() => void connect('gitlab')}>{busy === 'gitlab' ? 'Conectando…' : 'Conectar'}</button>
             </article>
@@ -169,7 +169,7 @@ export default function GitCenter({ supabase, user }: Props) {
               <div className="git-panel-heading"><div><h3>Conexiones</h3><span>{connections.length} cuentas vinculadas</span></div><button className="git-refresh" onClick={() => void load()} disabled={busy !== ''}><RefreshCw size={15} /> Actualizar</button></div>
               {connections.length === 0 ? <div className="git-panel-empty">Todavía no hay proveedores conectados.</div> : connections.map((connection) => (
                 <div className="git-connection-row" key={connection.id}>
-                  <div className="git-connection-mark">{connection.provider === 'github' ? <Github size={18} /> : <Gitlab size={18} />}</div>
+                  <div className="git-connection-mark">{connection.provider === 'github' ? <Github size={18} /> : <GitBranch size={18} />}</div>
                   <div className="git-connection-info"><strong>{connection.provider_username}</strong><span>{connection.provider} · {connection.scopes.length ? connection.scopes.join(', ') : 'permisos del proveedor'}</span></div>
                   <span className="git-connected">Conectado</span>
                   <button className="git-sync-button" onClick={() => void sync(connection)} disabled={busy !== ''}><RefreshCw size={14} /> {busy === 'sync-' + connection.id ? 'Sincronizando' : 'Sincronizar'}</button>
@@ -183,7 +183,7 @@ export default function GitCenter({ supabase, user }: Props) {
                 <div className="git-repository-list">
                   {repositories.map((repository) => (
                     <button className={'git-repository-row' + (selectedId === repository.id ? ' is-selected' : '')} key={repository.id} onClick={() => void inspect(repository)}>
-                      <span className="git-repo-symbol">{repository.provider === 'github' ? <Github size={17} /> : <Gitlab size={17} />}</span>
+                      <span className="git-repo-symbol">{repository.provider === 'github' ? <Github size={17} /> : <GitBranch size={17} />}</span>
                       <span className="git-repo-copy"><strong>{repository.full_name}</strong><small>{repository.description || repository.provider + ' repository'}</small></span>
                       <span className="git-repo-visibility">{repository.visibility}</span>
                       <ExternalLink size={14} />
