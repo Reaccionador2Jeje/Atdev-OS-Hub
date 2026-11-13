@@ -57,6 +57,14 @@ export default function GitCenter({ supabase, user }: Props) {
     return data;
   }, [supabase]);
 
+  const invokeTokens = useCallback(async (body: Record<string, unknown>) => {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.functions.invoke('os-hub-tokens', { body });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }, [supabase]);
+
   const load = useCallback(async () => {
     if (!user || !supabase) {
       setConnections([]);
@@ -65,23 +73,20 @@ export default function GitCenter({ supabase, user }: Props) {
     }
     setBusy('load');
     try {
-      const [connectionData, repositoryData, tokenResult] = await Promise.all([
+      const [connectionData, repositoryData, tokenData] = await Promise.all([
         invoke({ action: 'list_connections' }),
         invoke({ action: 'list_repositories' }),
-        supabase.from('os_hub_api_tokens')
-          .select('id,label,token_prefix,scopes,expires_at,last_used_at,revoked_at,created_at')
-          .eq('owner_id', user.id).order('created_at', { ascending: false })
+        invokeTokens({ action: 'list' })
       ]);
-      if (tokenResult.error) throw tokenResult.error;
       setConnections(connectionData.connections ?? []);
       setRepositories(repositoryData.repositories ?? []);
-      setApiTokens((tokenResult.data ?? []) as ApiToken[]);
+      setApiTokens((tokenData.tokens ?? []) as ApiToken[]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo cargar Git Center.');
     } finally {
       setBusy('');
     }
-  }, [user, supabase, invoke]);
+  }, [user, supabase, invoke, invokeTokens]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -100,26 +105,13 @@ export default function GitCenter({ supabase, user }: Props) {
   };
 
   const createApiToken = async () => {
-    if (!supabase || !user || !tokenLabel.trim()) return;
+    if (!tokenLabel.trim()) return;
     setBusy('token');
     setMessage('');
     setNewToken('');
     try {
-      const bytes = crypto.getRandomValues(new Uint8Array(32));
-      const encoded = btoa(String.fromCharCode(...bytes)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
-      const raw = 'atdev_os_hub_' + encoded;
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
-      const hash = Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('');
-      const { error } = await supabase.from('os_hub_api_tokens').insert({
-        owner_id: user.id,
-        label: tokenLabel.trim().slice(0, 80),
-        token_prefix: raw.slice(0, 24),
-        token_hash: hash,
-        scopes: ['os:publish', 'build:submit'],
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      });
-      if (error) throw error;
-      setNewToken(raw);
+      const result = await invokeTokens({ action: 'create', label: tokenLabel.trim() });
+      setNewToken(result.token);
       setMessage('Token creado. Cópialo ahora: solo se muestra una vez.');
       await load();
     } catch (error) {
@@ -130,13 +122,9 @@ export default function GitCenter({ supabase, user }: Props) {
   };
 
   const revokeApiToken = async (tokenId: string) => {
-    if (!supabase || !user) return;
     setBusy('revoke-' + tokenId);
     try {
-      const { error } = await supabase.from('os_hub_api_tokens')
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', tokenId).eq('owner_id', user.id);
-      if (error) throw error;
+      await invokeTokens({ action: 'revoke', token_id: tokenId });
       setMessage('Token revocado.');
       await load();
     } catch (error) {
