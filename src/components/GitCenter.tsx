@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import {
-  ExternalLink, FolderGit2, GitBranch, GitCommitHorizontal, Github,
-  GitBranch, Link2, LockKeyhole, RefreshCw, ShieldCheck
+  ExternalLink, FileCode2, Folder, FolderGit2, GitBranch, GitCommitHorizontal,
+  Github, Link2, LockKeyhole, RefreshCw, ShieldCheck
 } from 'lucide-react';
 
 type Connection = {
