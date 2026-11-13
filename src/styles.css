@@ -21,3 +21,68 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .publish-modal{width:min(560px,100%);max-height:90vh;overflow:auto;padding:24px;border:1px solid #496550;border-radius:12px;background:#14231b;box-shadow:0 25px 90px rgba(0,0,0,.5)}.modal-heading{display:flex;align-items:start;justify-content:space-between;margin-bottom:18px}.modal-heading h2{margin:7px 0 0;font:700 21px Manrope,sans-serif}.publish-modal label{display:flex;flex-direction:column;gap:6px;margin:12px 0;color:#a9c1ad;font-size:10px}.publish-modal input,.publish-modal textarea,.publish-modal select{width:100%;padding:10px;border:1px solid #385341;border-radius:6px;outline:0;background:#101d16;color:#e1eee2;font-size:11px}.publish-modal textarea{resize:vertical}.publish-modal input:focus,.publish-modal textarea:focus,.publish-modal select:focus{border-color:#a6d79b}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.submit-publish{width:100%;margin-top:14px}.submit-publish:disabled{opacity:.5;cursor:wait}
 @media(max-width:800px){.topbar{gap:18px;padding:0 18px}.topbar nav{display:none}main{padding:0 18px}.hero{grid-template-columns:1fr;padding:48px 0}.pond-art{height:230px}.project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero h1{font-size:44px}.about-strip{padding:23px}.user-label{display:none}}
 @media(max-width:540px){.topbar{height:62px}.brand{font-size:14px}.account-actions{gap:5px}.login-button{padding:0 8px}.hero h1{font-size:37px;letter-spacing:-1.7px}.hero-actions{align-items:flex-start;flex-direction:column;gap:8px}.section-heading{align-items:flex-start;flex-direction:column}.project-grid{grid-template-columns:1fr}.catalog-tools{align-items:stretch;flex-direction:column}.catalog-tools .search-box{max-width:none}.about-strip{align-items:flex-start}.about-mark{width:48px;height:48px;flex:0 0 48px}.about-mark svg{width:25px}footer{flex-direction:column;padding:18px}.form-row{grid-template-columns:1fr}}
+
+
+/* Git Center */
+.git-center-section{padding:78px 7vw 84px;background:#f3f7f3;border-top:1px solid #e1eae1;border-bottom:1px solid #e1eae1}
+.git-center-heading{align-items:flex-end;margin-bottom:30px}
+.git-center-heading h2{margin:8px 0 8px;font-size:clamp(30px,4vw,44px);letter-spacing:-1.5px}
+.git-center-heading p{margin:0;color:#66766a;max-width:620px}
+.git-mode,.git-experimental{display:inline-flex;align-items:center;gap:7px;border:1px solid #dbe6dc;border-radius:999px;padding:8px 12px;color:#607164;background:#fff;font-size:12px;font-weight:650;white-space:nowrap}
+.git-provider-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.git-provider-card,.git-panel{background:#fff;border:1px solid #e0e8e0;border-radius:16px;box-shadow:0 8px 28px rgba(33,65,43,.035)}
+.git-provider-card{min-height:90px;padding:17px;display:flex;align-items:center;gap:13px}
+.git-provider-icon,.git-connection-mark,.git-repo-symbol{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#f0f5f0;color:#263f2e;flex:none}
+.gitlab-icon{color:#e56a35;background:#fff4ed}
+.git-provider-copy{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.git-provider-copy strong{font-size:15px;color:#1f3024}
+.git-provider-copy span{font-size:11px;color:#829087}
+.git-provider-card button,.git-sync-button{border:0;border-radius:9px;background:#234c34;color:#fff;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.git-provider-card button:disabled,.git-sync-button:disabled{opacity:.55;cursor:wait}
+.git-provider-experimental{background:#fbfcfa}
+.git-experimental{padding:6px 9px;font-size:10px;background:#f7f4e9;border-color:#ece4c8;color:#8a7132}
+.git-dashboard-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:16px;align-items:start}
+.git-panel{padding:20px;min-width:0}
+.git-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+.git-panel-heading h3{font-size:16px;margin:0 0 5px;color:#24372a}
+.git-panel-heading span{font-size:11px;color:#829087}
+.git-refresh{display:flex;align-items:center;gap:7px;border:1px solid #e0e8e0;background:white;color:#4b5c4f;padding:8px 10px;border-radius:9px;font-size:11px;cursor:pointer}
+.git-connection-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #edf1ed}
+.git-connection-mark{width:34px;height:34px;border-radius:10px}
+.git-connection-info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.git-connection-info strong{font-size:12px;color:#26392b}
+.git-connection-info span{font-size:10px;color:#8a958c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.git-connected{font-size:10px;color:#287344;background:#edf7ef;border-radius:999px;padding:5px 8px}
+.git-sync-button{display:flex;align-items:center;gap:6px;background:#f0f5f0;color:#385641}
+.git-panel-empty{padding:24px 10px;text-align:center;color:#8a968d;font-size:12px;line-height:1.6}
+.git-repository-list{display:flex;flex-direction:column;max-height:350px;overflow:auto}
+.git-repository-row{display:flex;align-items:center;gap:10px;width:100%;padding:11px 2px;border:0;border-top:1px solid #edf1ed;background:white;text-align:left;cursor:pointer;color:#627067}
+.git-repository-row:hover,.git-repository-row.is-selected{background:#f7faf7}
+.git-repository-row.is-selected{box-shadow:inset 3px 0 #39764d}
+.git-repo-symbol{width:32px;height:32px;border-radius:9px}
+.git-repo-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.git-repo-copy strong{font-size:12px;color:#2b3d30;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.git-repo-copy small{font-size:10px;color:#8a958c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.git-repo-visibility{font-size:10px;color:#839087}
+.git-inspector{margin-top:16px}
+.git-inspector .git-panel-heading a{display:flex;align-items:center;gap:6px;font-size:11px;color:#39704a;text-decoration:none}
+.git-inspector-columns{display:grid;grid-template-columns:.7fr 1.3fr;gap:22px}
+.git-field-label,.git-subheading{display:flex;align-items:center;gap:7px;color:#55675a;font-size:12px;font-weight:700;margin-bottom:10px}
+.git-inspector select{width:100%;padding:10px;border:1px solid #dfe8df;border-radius:9px;background:#fff;color:#344a39}
+.git-branch-list{margin:0;padding:0;list-style:none;max-height:180px;overflow:auto}
+.git-branch-list li{font:11px ui-monospace,monospace;color:#6d7b70;padding:7px 9px;border-bottom:1px solid #edf1ed}
+.git-commit-list{display:flex;flex-direction:column;max-height:300px;overflow:auto}
+.git-commit-item{display:flex;gap:10px;padding:10px 0;border-top:1px solid #edf1ed}
+.git-commit-dot{width:9px;height:9px;border-radius:50%;background:#5a9367;margin:4px 0 0 3px;flex:none}
+.git-commit-item div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.git-commit-item strong{font-size:12px;color:#35483a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.git-commit-item small{font-size:10px;color:#8a958c}
+.git-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:34px;background:#fff;border:1px dashed #d7e2d7;border-radius:14px;color:#607164;text-align:center}
+.git-empty strong{font-size:14px;color:#304634}
+.git-empty span{font-size:12px}
+.git-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:14px 0;background:#edf6ee;border:1px solid #d6e8d8;border-radius:10px;color:#385d40;font-size:12px}
+.git-notice button{border:0;background:transparent;color:#385d40;font-weight:700;cursor:pointer}
+.git-security-note{display:flex;align-items:flex-start;gap:8px;margin-top:16px;color:#7c897f;font-size:11px;line-height:1.6}
+.git-security-note svg{flex:none;color:#4c8157}
+@media(max-width:900px){.git-provider-grid{grid-template-columns:1fr}.git-dashboard-grid{grid-template-columns:1fr}.git-center-heading{align-items:flex-start;flex-direction:column}.git-inspector-columns{grid-template-columns:1fr}}
+@media(max-width:560px){.git-center-section{padding:54px 5vw}.git-connection-row{flex-wrap:wrap}.git-sync-button{margin-left:44px}.git-repo-visibility{display:none}.git-panel{padding:15px}}
