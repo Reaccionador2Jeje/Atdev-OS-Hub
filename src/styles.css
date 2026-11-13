@@ -106,3 +106,17 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .git-token-revoked{font-size:10px;color:#9b4646;background:#fff0f0;padding:5px 8px;border-radius:999px}
 .git-token-help{margin:12px 0 0;color:#8a958c;font-size:10px;line-height:1.5}
 @media(max-width:560px){.git-token-create{flex-direction:column}.git-token-row{flex-wrap:wrap}}
+
+
+.git-file-browser{margin-top:22px;padding-top:17px;border-top:1px solid #edf1ed}
+.git-file-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;max-height:300px;overflow:auto}
+.git-file-row{display:flex;align-items:center;gap:8px;min-width:0;border:0;border-radius:7px;background:#f8faf8;padding:8px 9px;text-align:left;color:#657267;font-size:11px;cursor:pointer}
+.git-file-row:hover,.git-file-row.is-selected{background:#eaf3eb;color:#315b3c}
+.git-file-row:disabled{cursor:default;opacity:.75}
+.git-file-row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace}
+.git-file-row small{font-size:9px;color:#9aa49c}
+.git-file-preview{margin-top:14px;border:1px solid #e3eae3;border-radius:10px;overflow:hidden}
+.git-file-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f7faf7;border-bottom:1px solid #e3eae3;font-size:11px;color:#435747}
+.git-file-preview-heading button{border:0;background:transparent;color:#6d7b70;cursor:pointer;font-size:11px}
+.git-file-preview pre{margin:0;padding:14px;max-height:480px;overflow:auto;background:#fbfcfb;color:#35453a;font:11px/1.6 ui-monospace,SFMono-Regular,monospace;white-space:pre;tab-size:2}
+@media(max-width:650px){.git-file-list{grid-template-columns:1fr}}
