@@ -42,6 +42,8 @@ export default function GitCenter({ supabase, user }: Props) {
   const [selectedId, setSelectedId] = useState('');
   const [branches, setBranches] = useState<GitItem[]>([]);
   const [commits, setCommits] = useState<GitItem[]>([]);
+  const [treeItems, setTreeItems] = useState<GitItem[]>([]);
+  const [filePreview, setFilePreview] = useState<{ path: string; content: string } | null>(null);
   const [branch, setBranch] = useState('');
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
@@ -162,18 +164,38 @@ export default function GitCenter({ supabase, user }: Props) {
     setBusy('inspect');
     setMessage('');
     try {
-      const [branchData, commitData] = await Promise.all([
+      const [branchData, commitData, treeData] = await Promise.all([
         invoke({ action: 'list_branches', repository_id: repository.id }),
-        invoke({ action: 'list_commits', repository_id: repository.id, branch: selectedBranch || repository.default_branch })
+        invoke({ action: 'list_commits', repository_id: repository.id, branch: selectedBranch || repository.default_branch }),
+        invoke({ action: 'list_tree', repository_id: repository.id, branch: selectedBranch || repository.default_branch })
       ]);
       const nextBranches = (branchData.items ?? []) as GitItem[];
+      const treePayload = treeData.items;
       setBranches(nextBranches);
       setCommits((commitData.items ?? []) as GitItem[]);
+      setTreeItems((Array.isArray(treePayload) ? treePayload : treePayload?.tree ?? []) as GitItem[]);
+      setFilePreview(null);
       setBranch(selectedBranch || repository.default_branch);
     } catch (error) {
       setBranches([]);
       setCommits([]);
+      setTreeItems([]);
+      setFilePreview(null);
       setMessage(error instanceof Error ? error.message : 'No se pudo inspeccionar el repositorio.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const openRepositoryFile = async (path: string) => {
+    if (!selected) return;
+    setBusy('file');
+    setMessage('');
+    try {
+      const result = await invoke({ action: 'get_file', repository_id: selected.id, branch, path });
+      setFilePreview({ path, content: String(result.content ?? '') });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo abrir el archivo.');
     } finally {
       setBusy('');
     }
@@ -303,6 +325,27 @@ export default function GitCenter({ supabase, user }: Props) {
                     {commits.length === 0 && <div className="git-panel-empty">No hay commits para esta rama.</div>}
                   </div>
                 </div>
+              </div>
+              <div className="git-file-browser">
+                <div className="git-subheading"><Folder size={15} /> Archivos del repositorio</div>
+                <div className="git-file-list">
+                  {treeItems.filter((item) => item.type === 'blob' || item.type === 'tree').map((item) => (
+                    <button key={String(item.path)} className={'git-file-row' + (filePreview?.path === item.path ? ' is-selected' : '')}
+                      onClick={() => item.type === 'blob' ? void openRepositoryFile(String(item.path)) : undefined}
+                      disabled={item.type !== 'blob' || busy !== ''}>
+                      {item.type === 'tree' ? <Folder size={14} /> : <FileCode2 size={14} />}
+                      <span>{String(item.path)}</span>
+                      {item.type === 'blob' && <small>{item.size ? String(item.size) + ' B' : 'Archivo'}</small>}
+                    </button>
+                  ))}
+                  {treeItems.length === 0 && <div className="git-panel-empty">No hay archivos para mostrar.</div>}
+                </div>
+                {filePreview && (
+                  <div className="git-file-preview">
+                    <div className="git-file-preview-heading"><strong>{filePreview.path}</strong><button onClick={() => setFilePreview(null)}>Cerrar</button></div>
+                    <pre>{filePreview.content}</pre>
+                  </div>
+                )}
               </div>
             </div>
           )}
