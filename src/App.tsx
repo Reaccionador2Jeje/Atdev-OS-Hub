@@ -15,6 +15,8 @@ type OsProject = {
   architectures: string[];
   source_url: string | null;
   created_at: string;
+  status?: 'draft' | 'published';
+  visibility?: 'public' | 'private';
 };
 
 type OsRelease = {
@@ -60,6 +62,8 @@ async function ensureProfile(account: User) {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<OsProject[]>([]);
+  const [myProjects, setMyProjects] = useState<OsProject[]>([]);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [query, setQuery] = useState('');
@@ -119,7 +123,17 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const loadMyProjects = useCallback(async () => {
+    if (!supabase || !user) { setMyProjects([]); return; }
+    const { data, error } = await supabase.from('os_projects')
+      .select('id,owner_id,slug,name,summary,description,base_distribution,desktop_environments,architectures,source_url,created_at,status,visibility')
+      .eq('owner_id', user.id).order('updated_at', { ascending: false });
+    if (error) setNotice('No se pudieron cargar tus proyectos: ' + error.message);
+    else setMyProjects((data ?? []) as OsProject[]);
+  }, [user]);
+
   useEffect(() => { void loadProjects(); }, [loadProjects]);
+  useEffect(() => { void loadMyProjects(); }, [loadMyProjects]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -244,8 +258,7 @@ function App() {
     }
     setPublishing(true);
     setNotice('');
-    const { data: createdProject, error } = await supabase.from('os_projects').insert({
-      owner_id: user.id,
+    const projectPayload = {
       slug: normalizedSlug,
       name: name.trim(),
       summary: summary.trim(),
@@ -257,15 +270,29 @@ function App() {
       source_url: sourceUrl.trim() || null,
       visibility: 'public',
       status: 'published'
-    }).select('id').single();
-    if (error || !createdProject) {
-      setPublishing(false);
-      setNotice('No se pudo publicar el proyecto: ' + (error?.message || 'No se recibió el identificador del proyecto.'));
-      return;
+    };
+    let createdProjectId = editingProjectId;
+    if (editingProjectId) {
+      const { error } = await supabase.from('os_projects').update(projectPayload)
+        .eq('id', editingProjectId).eq('owner_id', user.id);
+      if (error) {
+        setPublishing(false);
+        setNotice('No se pudo actualizar el proyecto: ' + error.message);
+        return;
+      }
+    } else {
+      const { data: createdProject, error } = await supabase.from('os_projects')
+        .insert({ ...projectPayload, owner_id: user.id }).select('id').single();
+      if (error || !createdProject) {
+        setPublishing(false);
+        setNotice('No se pudo publicar el proyecto: ' + (error?.message || 'No se recibió el identificador del proyecto.'));
+        return;
+      }
+      createdProjectId = createdProject.id;
     }
     if (hasReleaseArtifact) {
       const { error: releaseError } = await supabase.from('os_releases').insert({
-        project_id: createdProject.id,
+        project_id: createdProjectId,
         version: releaseVersion.trim(),
         channel: releaseChannel,
         release_notes: releaseNotes.trim(),
@@ -281,16 +308,40 @@ function App() {
     }
     setPublishing(false);
     setShowPublish(false);
+    setEditingProjectId(null);
     setName(''); setSlug(''); setSummary(''); setDescription(''); setSourceUrl('');
     setArtifactUrl(''); setArtifactSha256(''); setReleaseNotes('');
-    await loadProjects();
+    await Promise.all([loadProjects(), loadMyProjects()]);
+  };
+
+  const editProject = (project: OsProject) => {
+    setEditingProjectId(project.id);
+    setName(project.name);
+    setSlug(project.slug);
+    setSummary(project.summary);
+    setDescription(project.description || '');
+    setBase(project.base_distribution);
+    setDesktop(project.desktop_environments[0] || 'none');
+    setArchitectures(project.architectures.join(', '));
+    setSourceUrl(project.source_url || '');
+    setShowPublish(true);
+  };
+
+  const deleteProject = async (project: OsProject) => {
+    if (!supabase || !user || !window.confirm('¿Eliminar "' + project.name + '"? Esta acción no se puede deshacer.')) return;
+    const { error } = await supabase.from('os_projects').delete().eq('id', project.id).eq('owner_id', user.id);
+    if (error) setNotice('No se pudo eliminar el proyecto: ' + error.message);
+    else {
+      setNotice('Proyecto eliminado.');
+      await Promise.all([loadProjects(), loadMyProjects()]);
+    }
   };
 
   return (
     <div className="hub-shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-mark"><Leaf size={20} /></span><span>atdev<span className="brand-light"> / os hub</span></span></a>
-        <nav><a href="#explore">Explorar</a><a href="#git-center">Git Center</a><a href="#about">Acerca del Hub</a></nav>
+        <nav><a href="#explore">Explorar</a>{user && <a href="#my-projects">Mis proyectos</a>}<a href="#git-center">Git Center</a><a href="#about">Acerca del Hub</a></nav>
         <div className="account-actions">
           {user ? (
             <>
@@ -325,6 +376,28 @@ function App() {
             <div className="pond-caption">OPEN SOURCE · OPEN SYSTEMS</div>
           </div>
         </section>
+
+        {user && (
+          <section id="my-projects" className="my-projects-section">
+            <div className="section-heading">
+              <div><div className="eyebrow">ESPACIO DE CREACIÓN</div><h2>Mis proyectos</h2><p>Administra tus sistemas operativos y sus publicaciones.</p></div>
+              <button className="publish-button" onClick={() => { setEditingProjectId(null); setShowPublish(true); }}><Plus size={16} /> Nuevo proyecto</button>
+            </div>
+            {myProjects.length === 0 ? <div className="my-projects-empty">Todavía no has publicado proyectos. Crea el primero para compartirlo con la comunidad.</div> : (
+              <div className="my-project-list">
+                {myProjects.map((project) => (
+                  <article className="my-project-row" key={project.id}>
+                    <div className="my-project-symbol"><Leaf size={19} /></div>
+                    <div className="my-project-info"><strong>{project.name}</strong><span>/{project.slug} · {project.base_distribution} · {project.architectures.join(', ')}</span></div>
+                    <span className={'my-project-state ' + (project.status === 'published' ? 'is-published' : 'is-draft')}>{project.status === 'published' ? 'Publicado' : 'Borrador'}</span>
+                    <button onClick={() => editProject(project)}>Editar</button>
+                    <button className="my-project-delete" onClick={() => void deleteProject(project)}>Eliminar</button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         <GitCenter supabase={supabase} user={user} />
 
@@ -413,7 +486,7 @@ function App() {
       {showPublish && user && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowPublish(false); }}>
           <form className="publish-modal" onSubmit={(event) => void publishProject(event)}>
-            <div className="modal-heading"><div><div className="eyebrow">NUEVO PROYECTO</div><h2>Publicar sistema operativo</h2></div><button type="button" className="icon-button" onClick={() => setShowPublish(false)}>×</button></div>
+            <div className="modal-heading"><div><div className="eyebrow">NUEVO PROYECTO</div><h2>{editingProjectId ? 'Editar sistema operativo' : 'Publicar sistema operativo'}</h2></div><button type="button" className="icon-button" onClick={() => { setShowPublish(false); setEditingProjectId(null); }}>×</button></div>
             <label>Nombre<input required maxLength={80} value={name} onChange={(event) => { setName(event.target.value); if (!slug) setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} /></label>
             <label>Identificador<input required maxLength={80} value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="mi-sistema" /></label>
             <label>Descripción corta<input required maxLength={180} value={summary} onChange={(event) => setSummary(event.target.value)} /></label>
@@ -426,7 +499,7 @@ function App() {
             <label>URL del archivo ISO (HTTPS)<input value={artifactUrl} onChange={(event) => setArtifactUrl(event.target.value)} placeholder="https://.../pondos.iso" /></label>
             <label>SHA-256 del ISO<input value={artifactSha256} onChange={(event) => setArtifactSha256(event.target.value)} placeholder="64 caracteres hexadecimales" maxLength={64} /></label>
             <label>Notas de versión<textarea rows={2} value={releaseNotes} onChange={(event) => setReleaseNotes(event.target.value)} /></label>
-            <button className="primary-link submit-publish" disabled={publishing}>{publishing ? 'Publicando...' : 'Publicar proyecto'} <ArrowUpRight size={15} /></button>
+            <button className="primary-link submit-publish" disabled={publishing}>{publishing ? 'Guardando...' : editingProjectId ? 'Guardar cambios' : 'Publicar proyecto'} <ArrowUpRight size={15} /></button>
           </form>
         </div>
       )}
