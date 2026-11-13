@@ -120,3 +120,39 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .git-file-preview-heading button{border:0;background:transparent;color:#6d7b70;cursor:pointer;font-size:11px}
 .git-file-preview pre{margin:0;padding:14px;max-height:480px;overflow:auto;background:#fbfcfb;color:#35453a;font:11px/1.6 ui-monospace,SFMono-Regular,monospace;white-space:pre;tab-size:2}
 @media(max-width:650px){.git-file-list{grid-template-columns:1fr}}
+
+
+.sort-select{height:42px;padding:0 12px;border:1px solid #344a3d;border-radius:7px;background:#15221c;color:#b9cdbd;font-size:11px;outline:0}
+.project-details-button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:13px;padding:9px 10px;border:1px solid #3a5a43;border-radius:7px;background:#1b3023;color:#c0e2b8;font-size:10px;font-weight:700}
+.project-details-button:hover{background:#284331}
+.project-detail-modal{width:min(760px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #496550;border-radius:14px;background:#14231b;box-shadow:0 25px 90px rgba(0,0,0,.5)}
+.project-detail-modal .modal-heading{align-items:flex-start}
+.project-detail-modal .modal-heading h2{font:800 26px Manrope,sans-serif;letter-spacing:-.8px}
+.detail-slug{display:block;margin-top:5px;color:#86a38d;font:11px 'DM Mono',monospace}
+.detail-summary{margin:8px 0 14px;color:#d2e3d5;font-size:14px;line-height:1.7}
+.detail-tags{margin-bottom:17px}
+.detail-description{padding:16px;border:1px solid #304a38;border-radius:9px;background:#101d16;color:#a9c0ad;font-size:12px;line-height:1.85;white-space:pre-wrap}
+.detail-actions{display:flex;align-items:center;gap:10px;margin:15px 0 24px}
+.detail-star,.detail-source{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #3a5a43;border-radius:7px;background:#1b3023;color:#c0e2b8;font-size:11px;font-weight:700}
+.detail-star.is-starred{background:#b6dfa9;color:#193c29;border-color:#b6dfa9}
+.detail-source{background:transparent;color:#a9cba9}
+.detail-section{margin-top:22px;padding-top:18px;border-top:1px solid #2c4333}
+.detail-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+.detail-section-title h3{margin:0;color:#e0eee2;font:700 16px Manrope,sans-serif}
+.detail-section-title span,.detail-muted{color:#829b88;font-size:11px}
+.release-card{display:grid;grid-template-columns:1fr auto;gap:8px 14px;margin:9px 0;padding:13px;border:1px solid #304a38;border-radius:9px;background:#192b20}
+.release-card>div{display:flex;flex-direction:column;gap:4px}
+.release-card strong{color:#d8eadb;font-size:13px}
+.release-card span{color:#8ca992;font-size:10px}
+.release-card>a{display:flex;align-items:center;gap:6px;color:#b8dfa9;font-size:11px}
+.release-card p{grid-column:1/-1;margin:2px 0;color:#a2b8a6;font-size:11px;line-height:1.6}
+.release-card code{grid-column:1/-1;color:#829a88;font-size:9px;overflow-wrap:anywhere}
+.comment-form{display:flex;flex-direction:column;align-items:flex-end;gap:9px;margin:12px 0}
+.comment-form textarea{width:100%;padding:11px;border:1px solid #385341;border-radius:7px;background:#101d16;color:#e1eee2;resize:vertical;font-size:11px}
+.comment-form button:disabled{opacity:.45;cursor:not-allowed}
+.comment-list{display:flex;flex-direction:column;gap:9px;margin-top:13px}
+.comment-card{padding:12px;border:1px solid #304a38;border-radius:8px;background:#192b20}
+.comment-card strong{color:#d3e7d6;font-size:11px}
+.comment-card time{float:right;color:#78917e;font-size:9px}
+.comment-card p{margin:8px 0 0;color:#a7bca9;font-size:11px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:540px){.project-detail-modal{padding:17px}.detail-actions{align-items:stretch;flex-direction:column}.detail-actions>*{justify-content:center}.release-card{grid-template-columns:1fr}.release-card>a{grid-row:2}.release-card p,.release-card code{grid-column:1}}
