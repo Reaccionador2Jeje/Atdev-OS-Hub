@@ -36,4 +36,4 @@ The user authenticates through Supabase Auth in the desktop client. Edge Functio
 4. Keep ISO artifacts on the configured release host.
 5. Show sync status and latest published version in both applications.
 
-The Edge Function endpoints and Void Memingo client implementation are follow-up work; the database foundation alone does not make synchronization live.
+Project publishing is implemented through the authenticated `void-memingo-sync` Edge Function. Git Center can issue scoped, one-year personal access tokens; raw tokens are displayed once and only SHA-256 hashes are stored. Void Memingo's OS Builder includes **Publicar en OS Hub** for manifest publishing and **Registrar build** for manual build-provenance events. Automatic build-completion callbacks and release promotion remain follow-up work.
