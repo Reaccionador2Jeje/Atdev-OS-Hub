@@ -9,6 +9,7 @@ type OsProject = {
   slug: string;
   name: string;
   summary: string;
+  description: string;
   base_distribution: string;
   desktop_environments: string[];
   architectures: string[];
@@ -96,7 +97,7 @@ function App() {
     setLoading(true);
     const { data, error } = await supabase
       .from('os_projects')
-      .select('id,owner_id,slug,name,summary,base_distribution,desktop_environments,architectures,source_url,created_at')
+      .select('id,owner_id,slug,name,summary,description,base_distribution,desktop_environments,architectures,source_url,created_at')
       .eq('visibility', 'public')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
