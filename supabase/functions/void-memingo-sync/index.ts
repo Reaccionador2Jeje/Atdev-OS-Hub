@@ -119,11 +119,19 @@ Deno.serve(async (req: Request) => {
       if (artifactUrl && !validHttps(artifactUrl)) return fail("El artefacto debe usar HTTPS.");
       if (checksum && !/^[a-f0-9]{64}$/.test(checksum)) return fail("SHA-256 inválido.");
       const sourceCommit = body.source_commit ? String(body.source_commit).slice(0, 80) : null;
+      const inputMetadata = typeof body.metadata === "object" && body.metadata ? body.metadata : {};
+      const allowedMetadata = ["builder_version","base_distribution","architecture","desktop_environment","iso_label","target_filesystem","build_profile"];
+      const safeMetadata: Record<string, string | number | boolean> = {};
+      for (const key of allowedMetadata) {
+        const value = inputMetadata[key];
+        if (typeof value === "string" && value.length <= 160) safeMetadata[key] = value;
+        else if (typeof value === "number" || typeof value === "boolean") safeMetadata[key] = value;
+      }
       const { error: buildError } = await admin.from("os_builds").insert({
         project_id: integration.project_id, owner_id: token.owner_id, integration_id: integration.id,
         version, source_commit: sourceCommit, build_system: "void-memingo",
         build_status: status, artifact_url: artifactUrl, sha256: checksum,
-        build_metadata: typeof body.metadata === "object" && body.metadata ? body.metadata : {},
+        build_metadata: safeMetadata,
         started_at: body.started_at ?? null, finished_at: body.finished_at ?? null,
       });
       if (buildError) throw buildError;
