@@ -21,6 +21,7 @@ type Repository = {
   web_url: string;
   default_branch: string;
   visibility: string;
+  connection_id: string;
 };
 type GitItem = Record<string, unknown> & {
   name?: string;
