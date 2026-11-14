@@ -6,8 +6,8 @@ Atdev OS Hub is both an operating-system project catalogue and a Git client/admi
 
 | Provider | Target capability | Current state |
 |---|---|---|
-| GitHub | Repository import, files, branches, commits, branch creation and file commits | OAuth credentials required; browser UI currently exposes read-only browsing |
-| GitLab | Repository import, files, branches, commits, branch creation and file commits | OAuth credentials required; GitLab adapter implemented, browser UI currently exposes read-only browsing |
+| GitHub | Repository import, files, branches, commits, branch creation, file commits and pull requests | Implemented; provider OAuth credentials and repository permissions required |
+| GitLab | Repository import, files, branches, commits, branch creation, file commits and merge requests | Implemented; provider OAuth credentials and `api` scope required for writes |
 | GitVoid | Native Atdev Git hosting and repository administration | Experimental; protocol/API is not complete |
 
 Supabase GitHub/Google sign-in authenticates an OS Hub identity only. It does not authorize Git operations. GitHub repository access should use a GitHub App with minimum repository permissions. GitLab should use scopes selected for exact operations, beginning read-only and adding write access only when users enable it.
@@ -19,8 +19,9 @@ Supabase GitHub/Google sign-in authenticates an OS Hub identity only. It does no
 - OAuth tokens are stored as encrypted Supabase Vault secrets. The private.git_provider_credentials table stores only Vault secret IDs and is unavailable to anon/authenticated.
 - Public tables contain provider identity, repository metadata, ownership and capability metadata only.
 - RLS scopes connections and imported repositories to their owner. Project links require ownership of both the OS project and repository.
-- Push, branch deletion, repository settings and release creation require explicit user action and provider permission checks.
-- Start with read-only repository browsing; enable write operations per repository after credentials and scopes are configured.
+- Write access is opt-in in Git Center. Creating branches, committing file edits and opening PRs/MRs each require a confirmation and are checked again by the Edge Function.
+- Disconnecting a provider removes its Vault-stored credentials and imported repository rows from OS Hub. It does not revoke the grant at GitHub/GitLab; users must revoke that separately at the provider.
+- Push from local Git, branch deletion, repository settings and provider-side release creation are not exposed in the current browser UI.
 
 ## Void Memingo integration
 
