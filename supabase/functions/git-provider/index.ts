@@ -68,10 +68,17 @@ async function providerFetchMaybe404(provider: string, token: string, path: stri
 }
 function requireWriteScope(connection: any) {
   const scopes = Array.isArray(connection.scopes) ? connection.scopes : [];
-  const allowed = connection.provider === "github"
-    ? scopes.includes("repo")
-    : connection.provider === "gitlab" && scopes.includes("api");
-  if (!allowed) throw new Error("Esta conexión solo tiene permisos de lectura. Reconecta el proveedor y autoriza explícitamente el acceso de escritura.");
+  if (connection.write_access !== true) {
+    throw new Error("Esta conexión no tiene consentimiento de escritura. Reconecta el proveedor y activa la opción de escritura.");
+  }
+  if (connection.provider === "gitlab" && !scopes.includes("api")) {
+    throw new Error("GitLab no concedió el scope api. Reconecta y autoriza el acceso de escritura.");
+  }
+  if (connection.provider !== "github" && connection.provider !== "gitlab") {
+    throw new Error("Este proveedor no admite operaciones de escritura.");
+  }
+  // GitHub App user tokens intentionally return an empty OAuth scope.
+  // GitHub enforces the app's Contents/Pull requests permissions on every API request.
 }
 
 function decodeBase64Utf8(value: string) {
@@ -140,7 +147,7 @@ Deno.serve(async (req: Request) => {
       const params = new URLSearchParams({ client_id: clientId, redirect_uri: callback, response_type: "code" });
       let verifier: string | null = null;
       const writeAccess = body.write_access === true;
-      if (provider === "github" && writeAccess) params.set("scope", "repo");
+      if (provider === "github") params.set("scope", "offline_access");
       if (provider === "gitlab") {
         verifier = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
         const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
@@ -153,7 +160,7 @@ Deno.serve(async (req: Request) => {
       const state = btoa(String.fromCharCode(...stateBytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
       const { error: stateError } = await admin.rpc("git_create_oauth_state", {
         p_state_id: state, p_owner_id: user.id, p_provider: provider,
-        p_return_origin: origin, p_code_verifier: verifier,
+        p_return_origin: origin, p_code_verifier: verifier, p_write_access: writeAccess,
       });
       if (stateError) throw stateError;
       params.set("state", state);
