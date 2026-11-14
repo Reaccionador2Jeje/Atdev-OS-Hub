@@ -49,6 +49,31 @@ async function providerFetch(provider: string, token: string, path: string, init
   }
   return data;
 }
+async function providerFetchMaybe404(provider: string, token: string, path: string, init: RequestInit = {}) {
+  const response = await fetch(providerBase(provider) + path, {
+    ...init,
+    headers: { ...headersFor(provider, token), ...(init.headers as Record<string, string> ?? {}) },
+  });
+  if (response.status === 404) return null;
+  const body = await response.text();
+  let data: any = null;
+  try { data = body ? JSON.parse(body) : null; } catch { data = body; }
+  if (!response.ok) {
+    const message = typeof data?.message === "string" ? data.message
+      : typeof data?.error_description === "string" ? data.error_description
+      : typeof data?.error === "string" ? data.error : `Provider API returned ${response.status}`;
+    throw new Error(message);
+  }
+  return data;
+}
+function requireWriteScope(connection: any) {
+  const scopes = Array.isArray(connection.scopes) ? connection.scopes : [];
+  const allowed = connection.provider === "github"
+    ? scopes.includes("repo")
+    : connection.provider === "gitlab" && scopes.includes("api");
+  if (!allowed) throw new Error("Esta conexión solo tiene permisos de lectura. Reconecta el proveedor y autoriza explícitamente el acceso de escritura.");
+}
+
 function decodeBase64Utf8(value: string) {
   const binary = atob(value.replace(/\s/g, ""));
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -114,11 +139,13 @@ Deno.serve(async (req: Request) => {
       const callback = `${supabaseUrl}/functions/v1/git-oauth-callback`;
       const params = new URLSearchParams({ client_id: clientId, redirect_uri: callback, response_type: "code" });
       let verifier: string | null = null;
+      const writeAccess = body.write_access === true;
+      if (provider === "github" && writeAccess) params.set("scope", "repo");
       if (provider === "gitlab") {
         verifier = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
         const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
         const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-        params.set("scope", "read_user read_api read_repository");
+        params.set("scope", writeAccess ? "api" : "read_user read_api read_repository");
         params.set("code_challenge", challenge);
         params.set("code_challenge_method", "S256");
       }
@@ -208,6 +235,7 @@ Deno.serve(async (req: Request) => {
           return json({ path, content: decodeBase64Utf8(file.content) });
         }
         if (action === "create_branch") {
+          requireWriteScope(connection);
           const branch = String(body.branch ?? "").trim();
           if (!/^[A-Za-z0-9._/-]{1,100}$/.test(branch) || branch.startsWith("/") || branch.endsWith("/") || branch.includes("..")) return fail("Nombre de rama inválido.");
           const source = String(body.source_branch ?? repo.default_branch);
@@ -216,15 +244,18 @@ Deno.serve(async (req: Request) => {
           return json({ created: true, ref: created.ref });
         }
         if (action === "commit_file") {
+          requireWriteScope(connection);
           const path = String(body.path ?? "").replace(/^\/+/, "");
           const content = String(body.content ?? "");
           const branch = String(body.branch ?? repo.default_branch);
-          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || content.length > 500_000) return fail("Ruta o contenido inválido (máximo 500 KB).");
-          const current = await providerFetch(provider, access, base + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(branch)).catch(() => null);
-          const payload: any = { message: String(body.message ?? "Update via Atdev OS Hub"), content: btoa(unescape(encodeURIComponent(content))), branch };
+          const message = String(body.message ?? "").trim();
+          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || path.length > 500 || content.length > 500_000 || !message || message.length > 160) return fail("Ruta, mensaje o contenido inválido (máximo 500 KB y mensaje de 160 caracteres).");
+          const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+          const current = await providerFetchMaybe404(provider, access, base + "/contents/" + encodedPath + "?ref=" + encodeURIComponent(branch));
+          const payload: any = { message, content: btoa(unescape(encodeURIComponent(content))), branch };
           if (current?.sha) payload.sha = current.sha;
-          const result = await providerFetch(provider, access, base + "/contents/" + path.split("/").map(encodeURIComponent).join("/"), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-          return json({ committed: true, sha: result.commit?.sha });
+          const result = await providerFetch(provider, access, base + "/contents/" + encodedPath, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          return json({ committed: true, sha: result.commit?.sha, operation: current?.sha ? "updated" : "created" });
         }
       } else {
         const projectId = encodeURIComponent(repo.external_repo_id);
@@ -242,21 +273,26 @@ Deno.serve(async (req: Request) => {
           return json({ path, content: decodeBase64Utf8(file.content) });
         }
         if (action === "create_branch") {
+          requireWriteScope(connection);
           const branch = String(body.branch ?? "").trim();
           if (!/^[A-Za-z0-9._/-]{1,100}$/.test(branch) || branch.startsWith("/") || branch.endsWith("/") || branch.includes("..")) return fail("Nombre de rama inválido.");
           const created = await providerFetch(provider, access, base + "/repository/branches?branch=" + encodeURIComponent(branch) + "&ref=" + encodeURIComponent(String(body.source_branch ?? repo.default_branch)), { method: "POST" });
           return json({ created: true, name: created.name });
         }
         if (action === "commit_file") {
+          requireWriteScope(connection);
           const path = String(body.path ?? "").replace(/^\/+/, "");
           const content = String(body.content ?? "");
-          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || content.length > 500_000) return fail("Ruta o contenido inválido (máximo 500 KB).");
+          const branch = String(body.branch ?? repo.default_branch);
+          const message = String(body.message ?? "").trim();
+          if (!path || path.split("/").some((part: string) => !part || part === "." || part === "..") || path.length > 500 || content.length > 500_000 || !message || message.length > 160) return fail("Ruta, mensaje o contenido inválido (máximo 500 KB y mensaje de 160 caracteres).");
+          const current = await providerFetchMaybe404(provider, access, base + "/repository/files/" + encodeURIComponent(path) + "?ref=" + encodeURIComponent(branch));
+          const actionName = current ? "update" : "create";
           const result = await providerFetch(provider, access, base + "/repository/commits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-            branch: String(body.branch ?? repo.default_branch),
-            commit_message: String(body.message ?? "Update via Atdev OS Hub"),
-            actions: [{ action: "create", file_path: path, content }],
+            branch, commit_message: message,
+            actions: [{ action: actionName, file_path: path, content, ...(current?.last_commit_id ? { last_commit_id: current.last_commit_id } : {}) }],
           }) });
-          return json({ committed: true, sha: result.id });
+          return json({ committed: true, sha: result.id, operation: current ? "updated" : "created" });
         }
       }
       return fail("Acción no disponible para este proveedor.");
