@@ -29,7 +29,7 @@ Configure only the repository permissions required by the features:
 
 Install the App only on repositories the account holder wants OS Hub to access, then add its client ID and client secret to Supabase Edge Function Secrets. User access tokens are limited by both the app's permissions and the user's own access.
 
-The Git Center write-consent checkbox is off by default. When enabled, the OAuth flow requests the additional repository write scope; the backend independently checks the stored scope before creating branches, committing files or opening pull requests. Each remote write requires a separate confirmation.
+The Git Center write-consent checkbox is off by default. The server records this choice in the one-time OAuth state and connection record. For GitHub Apps, this is an internal consent flag, not a `repo` scope; GitHub enforces the App's Contents and Pull requests permissions and the user's repository access on each API request. For GitLab, the write flow requests the `api` scope. Each remote write requires a separate confirmation. Reconnect existing accounts with write consent enabled to activate the capability.
 
 ## GitLab OAuth application
 
