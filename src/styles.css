@@ -195,3 +195,16 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .git-file-editor-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .git-file-editor-actions span{color:#8a958c;font-size:10px}
 @media(max-width:560px){.git-write-toolbar{align-items:stretch}.git-write-toolbar input,.git-write-toolbar button{width:100%}.git-file-editor-actions{align-items:stretch;flex-direction:column}}
+
+
+.git-review-request{margin:12px 0 16px;padding:14px;border:1px solid #dce8dd;border-radius:10px;background:#f7faf7}
+.git-review-fields{display:grid;grid-template-columns:minmax(160px,1fr) minmax(180px,2fr);gap:10px;margin-top:10px}
+.git-review-fields label{display:flex;flex-direction:column;gap:6px;color:#667568;font-size:10px;font-weight:700}
+.git-review-fields label:nth-child(3){grid-column:1/-1}
+.git-review-fields input,.git-review-fields select,.git-review-fields textarea{width:100%;padding:9px 10px;border:1px solid #d9e4da;border-radius:7px;background:#fff;color:#344a39;font:inherit}
+.git-review-fields textarea{min-height:72px;resize:vertical}
+.git-review-fields button{justify-self:start;padding:9px 13px;border:0;border-radius:7px;background:#234c34;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
+.git-review-fields button:disabled{opacity:.5;cursor:not-allowed}
+.git-review-fields small{align-self:center;color:#927d50;font-size:10px}
+.git-review-fields a{align-self:center;color:#28603d;font-size:11px;font-weight:700;text-decoration:none}
+@media(max-width:560px){.git-review-fields{grid-template-columns:1fr}.git-review-fields label:nth-child(3){grid-column:auto}.git-review-fields button{width:100%}}
