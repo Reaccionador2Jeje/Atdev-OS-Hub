@@ -55,6 +55,10 @@ export default function GitCenter({ supabase, user }: Props) {
   const [newBranch, setNewBranch] = useState('');
   const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
   const [commitMessage, setCommitMessage] = useState('Update via Atdev OS Hub');
+  const [reviewTargetBranch, setReviewTargetBranch] = useState('');
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewDescription, setReviewDescription] = useState('');
+  const [reviewUrl, setReviewUrl] = useState('');
 
   const invoke = useCallback(async (body: Record<string, unknown>) => {
     if (!supabase) throw new Error('Supabase no está configurado.');
@@ -187,6 +191,10 @@ export default function GitCenter({ supabase, user }: Props) {
       setTreeItems((Array.isArray(treePayload) ? treePayload : treePayload?.tree ?? []) as GitItem[]);
       setFilePreview(null);
       setBranch(selectedBranch || repository.default_branch);
+      setReviewTargetBranch(repository.default_branch);
+      setReviewTitle(`Changes from ${selectedBranch || repository.default_branch}`);
+      setReviewDescription('');
+      setReviewUrl('');
     } catch (error) {
       setBranches([]);
       setCommits([]);
@@ -252,6 +260,31 @@ export default function GitCenter({ supabase, user }: Props) {
       await inspect(selected, branch);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo guardar el archivo.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const createReviewRequest = async () => {
+    if (!selected || !canWrite || !branch || !reviewTargetBranch || branch === reviewTargetBranch || !reviewTitle.trim()) return;
+    const kind = selected.provider === 'github' ? 'Pull Request' : 'Merge Request';
+    if (!window.confirm(`Crear ${kind} desde "${branch}" hacia "${reviewTargetBranch}" en ${selected.full_name}?`)) return;
+    setBusy('review');
+    setMessage('');
+    setReviewUrl('');
+    try {
+      const result = await invoke({
+        action: 'create_review_request',
+        repository_id: selected.id,
+        source_branch: branch,
+        target_branch: reviewTargetBranch,
+        title: reviewTitle.trim(),
+        description: reviewDescription.trim()
+      });
+      setReviewUrl(String(result.url ?? ''));
+      setMessage(`${kind} #${result.number ?? ''} creado correctamente.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : `No se pudo crear el ${kind}.`);
     } finally {
       setBusy('');
     }
@@ -373,6 +406,29 @@ export default function GitCenter({ supabase, user }: Props) {
                   </>
                 ) : <span className="git-write-readonly"><LockKeyhole size={14} /> Solo lectura. Reconecta con permisos de escritura para crear ramas o commits.</span>}
               </div>
+              {canWrite && (
+                <div className="git-review-request">
+                  <div className="git-subheading">{selected.provider === 'github' ? 'Pull Request' : 'Merge Request'}</div>
+                  <div className="git-review-fields">
+                    <label>Rama de destino
+                      <select value={reviewTargetBranch} onChange={(event) => setReviewTargetBranch(event.target.value)}>
+                        {branches.map((item) => <option key={String(item.name)} value={String(item.name)}>{String(item.name)}</option>)}
+                      </select>
+                    </label>
+                    <label>Título
+                      <input value={reviewTitle} onChange={(event) => setReviewTitle(event.target.value)} maxLength={200} placeholder="Resumen de los cambios" />
+                    </label>
+                    <label>Descripción
+                      <textarea value={reviewDescription} onChange={(event) => setReviewDescription(event.target.value)} maxLength={10000} rows={3} placeholder="Describe los cambios para quienes revisarán el código." />
+                    </label>
+                    <button onClick={() => void createReviewRequest()} disabled={busy !== '' || !reviewTitle.trim() || !branch || branch === reviewTargetBranch}>
+                      {busy === 'review' ? 'Creando…' : selected.provider === 'github' ? 'Crear Pull Request' : 'Crear Merge Request'}
+                    </button>
+                    {branch === reviewTargetBranch && <small>Selecciona una rama de destino distinta de la rama actual.</small>}
+                    {reviewUrl && <a href={reviewUrl} target="_blank" rel="noreferrer">Abrir solicitud de revisión</a>}
+                  </div>
+                </div>
+              )}
               <div className="git-inspector-columns">
                 <div>
                   <label className="git-field-label"><GitBranch size={14} /> Rama</label>
