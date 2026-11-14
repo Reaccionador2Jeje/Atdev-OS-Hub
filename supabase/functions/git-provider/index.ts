@@ -22,12 +22,16 @@ async function authenticatedUser(req: Request) {
   return error ? null : data.user;
 }
 function providerBase(provider: string) {
-  return provider === "github" ? "https://api.github.com" : "https://gitlab.com/api/v4";
+  if (provider === "github") return "https://api.github.com";
+  if (provider === "gitlab") return "https://gitlab.com/api/v4";
+  throw new Error(`El proveedor "${provider}" todavía no tiene un adaptador API.`);
 }
 function headersFor(provider: string, token: string) {
-  return provider === "github"
-    ? { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2026-03-10" }
-    : { Authorization: `Bearer ${token}` };
+  if (provider === "github") {
+    return { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2026-03-10" };
+  }
+  if (provider === "gitlab") return { Authorization: `Bearer ${token}` };
+  throw new Error(`El proveedor "${provider}" todavía no tiene un adaptador API.`);
 }
 async function providerFetch(provider: string, token: string, path: string, init: RequestInit = {}) {
   const response = await fetch(providerBase(provider) + path, {
@@ -56,6 +60,9 @@ async function loadCredential(connectionId: string, userId: string) {
     .from("git_provider_connections").select("*").eq("id", connectionId)
     .eq("owner_id", userId).maybeSingle();
   if (connectionError || !connection || connection.status !== "connected") throw new Error("Conexión Git no encontrada o desconectada.");
+  if (connection.provider !== "github" && connection.provider !== "gitlab") {
+    throw new Error(`El adaptador API de ${connection.provider} todavía no está disponible. GitVoid sigue en fase experimental.`);
+  }
   const { data, error } = await admin.rpc("git_get_provider_credential", { p_connection_id: connectionId });
   if (error || !data?.[0]?.access_token) throw new Error("No se encontró la credencial segura. Vuelve a conectar el proveedor.");
   let access = data[0].access_token as string;
