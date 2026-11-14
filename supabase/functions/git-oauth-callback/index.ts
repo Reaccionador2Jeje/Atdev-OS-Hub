@@ -62,6 +62,7 @@ Deno.serve(async (req: Request) => {
       const { error } = await admin.from("git_provider_connections").update({
         provider_username: providerUsername,
         scopes: (token.scope ?? "").split(/[ ,]+/).filter(Boolean),
+        write_access: stateRecord.write_access === true,
         status: "connected", last_verified_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       }).eq("id", connectionId).eq("owner_id", stateRecord.owner_id);
       if (error) throw error;
@@ -71,6 +72,7 @@ Deno.serve(async (req: Request) => {
         provider_username: providerUsername,
         instance_url: provider === "github" ? "https://github.com" : "https://gitlab.com",
         scopes: (token.scope ?? "").split(/[ ,]+/).filter(Boolean),
+        write_access: stateRecord.write_access === true,
         status: "connected", last_verified_at: new Date().toISOString(),
       }).select("id").single();
       if (error || !data) throw error ?? new Error("No se pudo guardar la conexión.");
