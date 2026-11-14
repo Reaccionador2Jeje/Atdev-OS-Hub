@@ -160,6 +160,29 @@ export default function GitCenter({ supabase, user }: Props) {
     }
   };
 
+  const disconnectConnection = async (connection: Connection) => {
+    if (!window.confirm(`Desconectar ${connection.provider_username} de ${connection.provider} en Atdev OS Hub? Se borrarán de Supabase los tokens guardados y los repositorios importados de esta conexión. Esto no revoca el acceso directamente en el proveedor.`)) return;
+    setBusy('disconnect-' + connection.id);
+    setMessage('');
+    try {
+      await invoke({ action: 'disconnect_connection', connection_id: connection.id });
+      if (selectedConnection?.id === connection.id) {
+        setSelectedId('');
+        setBranches([]);
+        setCommits([]);
+        setTreeItems([]);
+        setFilePreview(null);
+        setEditingFile(null);
+      }
+      setMessage('Conexión desconectada y credenciales locales eliminadas de Supabase.');
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo desconectar el proveedor.');
+    } finally {
+      setBusy('');
+    }
+  };
+
   const sync = async (connection: Connection) => {
     setBusy('sync-' + connection.id);
     setMessage('');
@@ -341,6 +364,7 @@ export default function GitCenter({ supabase, user }: Props) {
                   <div className="git-connection-info"><strong>{connection.provider_username}</strong><span>{connection.provider} · {connection.scopes.length ? connection.scopes.join(', ') : 'permisos del proveedor'}</span></div>
                   <span className="git-connected">Conectado</span>
                   <button className="git-sync-button" onClick={() => void sync(connection)} disabled={busy !== ''}><RefreshCw size={14} /> {busy === 'sync-' + connection.id ? 'Sincronizando' : 'Sincronizar'}</button>
+                  <button className="git-disconnect-button" onClick={() => void disconnectConnection(connection)} disabled={busy !== ''}>{busy === 'disconnect-' + connection.id ? 'Desconectando…' : 'Desconectar'}</button>
                 </div>
               ))}
             </div>
@@ -487,7 +511,7 @@ export default function GitCenter({ supabase, user }: Props) {
       )}
 
       {message && <div className="git-notice" role="status">{message}<button onClick={() => setMessage('')}>Cerrar</button></div>}
-      <div className="git-security-note"><ShieldCheck size={15} /> Los tokens permanecen en Supabase Vault. La escritura requiere un consentimiento OAuth adicional, se comprueba en el servidor y cada commit exige confirmación. GitVoid continúa experimental.</div>
+      <div className="git-security-note"><ShieldCheck size={15} /> Los tokens se guardan en Supabase Vault y se eliminan al desconectar. Desconectar no revoca automáticamente el permiso en GitHub o GitLab; revócalo también desde el proveedor si quieres retirar el acceso remoto. La escritura exige consentimiento OAuth y confirmación por operación. GitVoid continúa experimental.</div>
     </section>
   );
 }
