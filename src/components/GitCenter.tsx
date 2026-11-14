@@ -11,6 +11,7 @@ type Connection = {
   provider_username: string;
   status: string;
   scopes: string[];
+  write_access: boolean;
 };
 type ApiToken = { id: string; label: string; token_prefix: string; scopes: string[]; expires_at: string | null; last_used_at: string | null; revoked_at: string | null; created_at: string };
 type Repository = {
@@ -104,8 +105,8 @@ export default function GitCenter({ supabase, user }: Props) {
   const selected = useMemo(() => repositories.find((item) => item.id === selectedId) ?? null, [repositories, selectedId]);
   const connectedProviders = useMemo(() => new Set(connections.filter((item) => item.status === 'connected').map((item) => item.provider)), [connections]);
   const selectedConnection = useMemo(() => connections.find((item) => item.id === selected?.connection_id) ?? null, [connections, selected]);
-  const canWrite = selectedConnection?.status === 'connected' && (
-    (selectedConnection.provider === 'github' && selectedConnection.scopes.includes('repo')) ||
+  const canWrite = selectedConnection?.status === 'connected' && selectedConnection.write_access === true && (
+    selectedConnection.provider === 'github' ||
     (selectedConnection.provider === 'gitlab' && selectedConnection.scopes.includes('api'))
   );
 
