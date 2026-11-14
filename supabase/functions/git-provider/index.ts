@@ -208,7 +208,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "list_branches" || action === "list_commits" || action === "list_tree" ||
-        action === "get_file" || action === "create_branch" || action === "commit_file") {
+        action === "get_file" || action === "create_branch" || action === "commit_file" || action === "create_review_request") {
       const { data: repo, error } = await admin.from("git_repositories").select("*")
         .eq("id", String(body.repository_id ?? "")).eq("owner_id", user.id).maybeSingle();
       if (error || !repo) return fail("Repositorio no encontrado.", 404);
@@ -257,6 +257,23 @@ Deno.serve(async (req: Request) => {
           const result = await providerFetch(provider, access, base + "/contents/" + encodedPath, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
           return json({ committed: true, sha: result.commit?.sha, operation: current?.sha ? "updated" : "created" });
         }
+        if (action === "create_review_request") {
+          requireWriteScope(connection);
+          const sourceBranch = String(body.source_branch ?? "").trim();
+          const targetBranch = String(body.target_branch ?? "").trim();
+          const title = String(body.title ?? "").trim();
+          const description = String(body.description ?? "");
+          const validBranch = (value: string) => /^[A-Za-z0-9._/-]{1,100}$/.test(value) && !value.startsWith("/") && !value.endsWith("/") && !value.includes("..");
+          if (!validBranch(sourceBranch) || !validBranch(targetBranch) || sourceBranch === targetBranch || !title || title.length > 200 || description.length > 10_000) {
+            return fail("Ramas, título o descripción inválidos para la solicitud de revisión.");
+          }
+          const result = await providerFetch(provider, access, base + "/pulls", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, head: sourceBranch, base: targetBranch, body: description }),
+          });
+          return json({ created: true, kind: "pull_request", number: result.number, url: result.html_url, state: result.state });
+        }
       } else {
         const projectId = encodeURIComponent(repo.external_repo_id);
         const base = "/projects/" + projectId;
@@ -293,6 +310,23 @@ Deno.serve(async (req: Request) => {
             actions: [{ action: actionName, file_path: path, content, ...(current?.last_commit_id ? { last_commit_id: current.last_commit_id } : {}) }],
           }) });
           return json({ committed: true, sha: result.id, operation: current ? "updated" : "created" });
+        }
+        if (action === "create_review_request") {
+          requireWriteScope(connection);
+          const sourceBranch = String(body.source_branch ?? "").trim();
+          const targetBranch = String(body.target_branch ?? "").trim();
+          const title = String(body.title ?? "").trim();
+          const description = String(body.description ?? "");
+          const validBranch = (value: string) => /^[A-Za-z0-9._/-]{1,100}$/.test(value) && !value.startsWith("/") && !value.endsWith("/") && !value.includes("..");
+          if (!validBranch(sourceBranch) || !validBranch(targetBranch) || sourceBranch === targetBranch || !title || title.length > 200 || description.length > 10_000) {
+            return fail("Ramas, título o descripción inválidos para la solicitud de revisión.");
+          }
+          const result = await providerFetch(provider, access, base + "/merge_requests", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source_branch: sourceBranch, target_branch: targetBranch, title, description }),
+          });
+          return json({ created: true, kind: "merge_request", number: result.iid, url: result.web_url, state: result.state });
         }
       }
       return fail("Acción no disponible para este proveedor.");
