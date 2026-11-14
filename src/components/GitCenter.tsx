@@ -336,7 +336,7 @@ export default function GitCenter({ supabase, user }: Props) {
         <>
           <label className="git-write-consent">
             <input type="checkbox" checked={writeAccess} onChange={(event) => setWriteAccess(event.target.checked)} />
-            <span><strong>Solicitar permisos de escritura</strong><small>Desactivado por defecto. GitHub solicitará el alcance repo y GitLab el alcance api. Solo autorízalo si quieres crear ramas y guardar archivos desde Git Center.</small></span>
+            <span><strong>Solicitar permisos de escritura</strong><small>Desactivado por defecto. GitHub usa los permisos de la GitHub App; GitLab solicitará el alcance api. Solo actívalo si quieres crear ramas, guardar archivos y abrir solicitudes de revisión.</small></span>
           </label>
           <div className="git-provider-grid">
             <article className="git-provider-card">
