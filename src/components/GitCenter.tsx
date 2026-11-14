@@ -50,6 +50,10 @@ export default function GitCenter({ supabase, user }: Props) {
   const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
   const [tokenLabel, setTokenLabel] = useState('Void Memingo Desktop');
   const [newToken, setNewToken] = useState('');
+  const [writeAccess, setWriteAccess] = useState(false);
+  const [newBranch, setNewBranch] = useState('');
+  const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
+  const [commitMessage, setCommitMessage] = useState('Update via Atdev OS Hub');
 
   const invoke = useCallback(async (body: Record<string, unknown>) => {
     if (!supabase) throw new Error('Supabase no está configurado.');
@@ -94,12 +98,17 @@ export default function GitCenter({ supabase, user }: Props) {
 
   const selected = useMemo(() => repositories.find((item) => item.id === selectedId) ?? null, [repositories, selectedId]);
   const connectedProviders = useMemo(() => new Set(connections.filter((item) => item.status === 'connected').map((item) => item.provider)), [connections]);
+  const selectedConnection = useMemo(() => connections.find((item) => item.id === selected?.connection_id) ?? null, [connections, selected]);
+  const canWrite = selectedConnection?.status === 'connected' && (
+    (selectedConnection.provider === 'github' && selectedConnection.scopes.includes('repo')) ||
+    (selectedConnection.provider === 'gitlab' && selectedConnection.scopes.includes('api'))
+  );
 
   const connect = async (provider: 'github' | 'gitlab') => {
     setBusy(provider);
     setMessage('');
     try {
-      const data = await invoke({ action: 'connect_url', provider, origin: window.location.origin });
+      const data = await invoke({ action: 'connect_url', provider, origin: window.location.origin, write_access: writeAccess });
       window.location.assign(data.authorization_url);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo iniciar la conexión.');
@@ -202,6 +211,51 @@ export default function GitCenter({ supabase, user }: Props) {
     }
   };
 
+  const createBranch = async () => {
+    if (!selected || !canWrite || !newBranch.trim()) return;
+    const name = newBranch.trim();
+    if (!window.confirm(`Crear la rama "${name}" desde "${branch}" en ${selected.full_name}?`)) return;
+    setBusy('write');
+    setMessage('');
+    try {
+      await invoke({ action: 'create_branch', repository_id: selected.id, branch: name, source_branch: branch });
+      setNewBranch('');
+      setMessage(`Rama "${name}" creada.`);
+      await inspect(selected, name);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo crear la rama.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const beginEdit = () => {
+    if (!filePreview || !canWrite) return;
+    setEditingFile({ ...filePreview });
+    setCommitMessage(`Update ${filePreview.path}`);
+  };
+
+  const saveFile = async () => {
+    if (!selected || !editingFile || !canWrite || !commitMessage.trim()) return;
+    const path = editingFile.path;
+    if (!window.confirm(`Confirmar commit de "${path}" en "${branch}" del repositorio ${selected.full_name}? Esta acción modificará el repositorio remoto.`)) return;
+    setBusy('write');
+    setMessage('');
+    try {
+      const result = await invoke({
+        action: 'commit_file', repository_id: selected.id, branch,
+        path, content: editingFile.content, message: commitMessage.trim()
+      });
+      setEditingFile(null);
+      setMessage(`Archivo ${result.operation === 'created' ? 'creado' : 'actualizado'} · commit ${String(result.sha ?? '').slice(0, 8)}.`);
+      await inspect(selected, branch);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'No se pudo guardar el archivo.');
+    } finally {
+      setBusy('');
+    }
+  };
+
   const changeBranch = async (next: string) => {
     if (selected) await inspect(selected, next);
   };
@@ -222,6 +276,10 @@ export default function GitCenter({ supabase, user }: Props) {
 
       {user && (
         <>
+          <label className="git-write-consent">
+            <input type="checkbox" checked={writeAccess} onChange={(event) => setWriteAccess(event.target.checked)} />
+            <span><strong>Solicitar permisos de escritura</strong><small>Desactivado por defecto. GitHub solicitará el alcance repo y GitLab el alcance api. Solo autorízalo si quieres crear ramas y guardar archivos desde Git Center.</small></span>
+          </label>
           <div className="git-provider-grid">
             <article className="git-provider-card">
               <div className="git-provider-icon"><Github size={24} /></div>
@@ -305,6 +363,15 @@ export default function GitCenter({ supabase, user }: Props) {
                 <div><h3>{selected.full_name}</h3><span>{selected.provider} · rama predeterminada: {selected.default_branch}</span></div>
                 <a href={selected.web_url} target="_blank" rel="noreferrer">Abrir proveedor <ExternalLink size={14} /></a>
               </div>
+              <div className="git-write-toolbar">
+                {canWrite ? (
+                  <>
+                    <span className="git-write-enabled"><ShieldCheck size={14} /> Escritura autorizada</span>
+                    <input value={newBranch} onChange={(event) => setNewBranch(event.target.value)} maxLength={100} placeholder="Nombre de nueva rama" aria-label="Nombre de nueva rama" />
+                    <button onClick={() => void createBranch()} disabled={busy !== '' || !newBranch.trim()}>{busy === 'write' ? 'Procesando…' : 'Crear rama'}</button>
+                  </>
+                ) : <span className="git-write-readonly"><LockKeyhole size={14} /> Solo lectura. Reconecta con permisos de escritura para crear ramas o commits.</span>}
+              </div>
               <div className="git-inspector-columns">
                 <div>
                   <label className="git-field-label"><GitBranch size={14} /> Rama</label>
@@ -343,8 +410,17 @@ export default function GitCenter({ supabase, user }: Props) {
                 </div>
                 {filePreview && (
                   <div className="git-file-preview">
-                    <div className="git-file-preview-heading"><strong>{filePreview.path}</strong><button onClick={() => setFilePreview(null)}>Cerrar</button></div>
-                    <pre>{filePreview.content}</pre>
+                    <div className="git-file-preview-heading">
+                      <strong>{filePreview.path}</strong>
+                      <div>{canWrite && <button onClick={() => editingFile ? setEditingFile(null) : beginEdit()}>{editingFile ? 'Cancelar edición' : 'Editar archivo'}</button>}<button onClick={() => { setFilePreview(null); setEditingFile(null); }}>Cerrar</button></div>
+                    </div>
+                    {editingFile ? (
+                      <div className="git-file-editor">
+                        <label>Contenido del archivo<textarea value={editingFile.content} onChange={(event) => setEditingFile({ ...editingFile, content: event.target.value })} maxLength={500000} spellCheck={false} /></label>
+                        <label>Mensaje del commit<input value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} maxLength={160} /></label>
+                        <div className="git-file-editor-actions"><span>{editingFile.content.length.toLocaleString()} / 500.000 caracteres · rama {branch}</span><button onClick={() => void saveFile()} disabled={busy !== '' || !commitMessage.trim()}>{busy === 'write' ? 'Guardando…' : 'Confirmar commit'}</button></div>
+                      </div>
+                    ) : <pre>{filePreview.content}</pre>}
                   </div>
                 )}
               </div>
@@ -354,7 +430,7 @@ export default function GitCenter({ supabase, user }: Props) {
       )}
 
       {message && <div className="git-notice" role="status">{message}<button onClick={() => setMessage('')}>Cerrar</button></div>}
-      <div className="git-security-note"><ShieldCheck size={15} /> Los tokens permanecen en el servidor, cifrados con Supabase Vault. Esta primera versión ofrece navegación de solo lectura; las operaciones de escritura se habilitarán al configurar permisos específicos.</div>
+      <div className="git-security-note"><ShieldCheck size={15} /> Los tokens permanecen en Supabase Vault. La escritura requiere un consentimiento OAuth adicional, se comprueba en el servidor y cada commit exige confirmación. GitVoid continúa experimental.</div>
     </section>
   );
 }
