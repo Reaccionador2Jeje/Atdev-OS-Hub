@@ -145,17 +145,14 @@ Deno.serve(async (req: Request) => {
       if (!allowed.includes(origin)) return fail("El origen de retorno no está permitido.", 403);
       const callback = `${supabaseUrl}/functions/v1/git-oauth-callback`;
       const params = new URLSearchParams({ client_id: clientId, redirect_uri: callback, response_type: "code" });
-      let verifier: string | null = null;
+      let verifier: string | null = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+      const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+      params.set("code_challenge", challenge);
+      params.set("code_challenge_method", "S256");
       const writeAccess = body.write_access === true;
       if (provider === "github") params.set("scope", "offline_access");
-      if (provider === "gitlab") {
-        verifier = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(48)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-        const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-        params.set("scope", writeAccess ? "api" : "read_user read_api read_repository");
-        params.set("code_challenge", challenge);
-        params.set("code_challenge_method", "S256");
-      }
+      else params.set("scope", writeAccess ? "api" : "read_user read_api read_repository");
       const stateBytes = crypto.getRandomValues(new Uint8Array(32));
       const state = btoa(String.fromCharCode(...stateBytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
       const { error: stateError } = await admin.rpc("git_create_oauth_state", {
