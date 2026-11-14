@@ -22,14 +22,14 @@ Create a GitHub App (not the OS Hub GitHub sign-in OAuth App) and configure its 
 https://pzfvpvioxpcjkxdawnsq.supabase.co/functions/v1/git-oauth-callback
 ```
 
-For the initial Git Center milestone, request only:
-- Repository metadata: read-only
-- Contents: read-only
-- Pull requests: read-only (optional)
+Configure only the repository permissions required by the features:
+- Metadata: read-only
+- Contents: read and write
+- Pull requests: read and write
 
 Install the App only on repositories the account holder wants OS Hub to access, then add its client ID and client secret to Supabase Edge Function Secrets. User access tokens are limited by both the app's permissions and the user's own access.
 
-The backend supports repository listing/sync, branches, commits and tree browsing. It also contains branch-creation and file-commit API actions, but the browser UI does not expose write controls yet. Keep the OAuth scopes read-only until explicit write-permission and confirmation UX is implemented.
+The Git Center write-consent checkbox is off by default. When enabled, the OAuth flow requests the additional repository write scope; the backend independently checks the stored scope before creating branches, committing files or opening pull requests. Each remote write requires a separate confirmation.
 
 ## GitLab OAuth application
 
@@ -39,12 +39,12 @@ Create an OAuth application on GitLab.com with redirect URI:
 https://pzfvpvioxpcjkxdawnsq.supabase.co/functions/v1/git-oauth-callback
 ```
 
-Enable the authorization code flow and PKCE. Initial requested scopes are:
+Enable the authorization code flow and PKCE. Initial read-only scopes are:
 - `read_user`
 - `read_api`
 - `read_repository`
 
-Add the application ID and secret to Supabase Edge Function Secrets.
+When a user explicitly enables write consent, Git Center requests the broader `api` scope for branch creation, file commits and merge requests. Add the application ID and secret to Supabase Edge Function Secrets.
 
 ## Atdev OS Hub identity vs Git provider connection
 
@@ -55,7 +55,7 @@ The existing “Sign in with GitHub” button authenticates a user account in Su
 - Git provider callback: `/functions/v1/git-oauth-callback`
 - Authenticated Git API: `/functions/v1/git-provider`
 
-The callback validates and consumes a random, one-time, ten-minute OAuth state stored server-side. GitLab authorization uses PKCE; its verifier is kept in the private database state record, never in the browser URL. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser.
+The callback validates and consumes a random, one-time, ten-minute OAuth state stored server-side. GitLab authorization uses PKCE; its verifier is kept in the private database state record, never in the browser URL. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser. Disconnecting a provider deletes the local Vault secrets and imported repository records; it does not revoke the grant at the external provider.
 
 ## GitVoid
 
