@@ -55,6 +55,7 @@ https://pzfvpvioxpcjkxdawnsq.supabase.co/functions/v1/git-oauth-callback
 4. Install the App only on repositories you want to connect. Authorize only the repositories that should be available to Git Center.
 5. Copy the App's Client ID and Client Secret into Supabase Edge Function Secrets as `GITHUB_APP_CLIENT_ID` and `GITHUB_APP_CLIENT_SECRET`.
 6. In Git Center, leave write consent disabled for read-only access. Enable it only when you intend to create branches, commit file changes, or open pull requests.
+7. GitHub App user tokens do not use the traditional `repo` OAuth scope. Git Center records the user's explicit write-consent choice separately; GitHub itself enforces the App's configured repository permissions on every write. The `offline_access` parameter is used only for expiring tokens/refresh tokens.
 
 Git Center can import repositories, inspect branches/commits/files, create branches, commit text-file changes, and open pull requests. The write-consent checkbox is off by default. Each remote write requires a separate confirmation in the UI, and the Edge Function independently checks the stored OAuth scopes.
 
