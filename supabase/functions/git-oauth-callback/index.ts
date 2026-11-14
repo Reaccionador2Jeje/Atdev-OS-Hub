@@ -10,10 +10,8 @@ async function exchange(provider: string, code: string, callback: string, verifi
   const clientId = Deno.env.get(provider === "github" ? "GITHUB_APP_CLIENT_ID" : "GITLAB_CLIENT_ID")!;
   const clientSecret = Deno.env.get(provider === "github" ? "GITHUB_APP_CLIENT_SECRET" : "GITLAB_CLIENT_SECRET")!;
   const form = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, code, redirect_uri: callback });
-  if (provider === "gitlab") {
-    form.set("grant_type", "authorization_code");
-    if (verifier) form.set("code_verifier", verifier);
-  }
+  if (provider === "gitlab") form.set("grant_type", "authorization_code");
+  if (verifier) form.set("code_verifier", verifier);
   const response = await fetch(provider === "github" ? "https://github.com/login/oauth/access_token" : "https://gitlab.com/oauth/token", {
     method: "POST", headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" }, body: form,
   });
