@@ -51,18 +51,20 @@ https://pzfvpvioxpcjkxdawnsq.supabase.co/functions/v1/git-oauth-callback
 ### GitHub repository access
 1. Create a separate GitHub App named **Atdev OS Hub Git Center** (do not reuse the login OAuth App).
 2. Configure the user authorization callback URL to the Git Center callback above.
-3. Start with repository metadata read-only and contents read-only. Add other permissions only when the corresponding feature is implemented.
-4. Install the App only on repositories you want to connect.
+3. Configure repository permissions for **Metadata: Read-only**, **Contents: Read and write**, and **Pull requests: Read and write**. Keep all unrelated permissions disabled.
+4. Install the App only on repositories you want to connect. Authorize only the repositories that should be available to Git Center.
 5. Copy the App's Client ID and Client Secret into Supabase Edge Function Secrets as `GITHUB_APP_CLIENT_ID` and `GITHUB_APP_CLIENT_SECRET`.
+6. In Git Center, leave write consent disabled for read-only access. Enable it only when you intend to create branches, commit file changes, or open pull requests.
 
-The current Git Center UI is read-only. It can import repositories and inspect branches, commits and text files. It does not push commits or change repository settings.
+Git Center can import repositories, inspect branches/commits/files, create branches, commit text-file changes, and open pull requests. The write-consent checkbox is off by default. Each remote write requires a separate confirmation in the UI, and the Edge Function independently checks the stored OAuth scopes.
 
 ### GitLab repository access
 1. Create a separate GitLab OAuth application named **Atdev OS Hub Git Center**.
 2. Redirect URI: the Git Center callback above.
 3. Enable Authorization Code flow and PKCE.
-4. Start with scopes `read_user`, `read_api` and `read_repository`.
-5. Copy its Application ID and Secret into Supabase Edge Function Secrets as `GITLAB_CLIENT_ID` and `GITLAB_CLIENT_SECRET`.
+4. Start with scopes `read_user`, `read_api` and `read_repository`. These support browsing without remote writes.
+5. The optional write-consent flow requests the broader `api` scope. It is needed for branch creation, file commits and merge requests; enable it only when those features are wanted.
+6. Copy its Application ID and Secret into Supabase Edge Function Secrets as `GITLAB_CLIENT_ID` and `GITLAB_CLIENT_SECRET`.
 
 ### Edge Function secrets
 
