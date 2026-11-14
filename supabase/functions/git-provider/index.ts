@@ -192,7 +192,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "list_connections") {
       const { data, error } = await admin.from("git_provider_connections")
-        .select("id,provider,provider_username,instance_url,scopes,status,connected_at,last_verified_at")
+        .select("id,provider,provider_username,instance_url,scopes,write_access,status,connected_at,last_verified_at")
         .eq("owner_id", user.id).order("connected_at", { ascending: false });
       if (error) throw error;
       return json({ connections: data ?? [] });
