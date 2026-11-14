@@ -163,6 +163,26 @@ Deno.serve(async (req: Request) => {
       return json({ authorization_url: authorizationUrl });
     }
 
+    if (action === "disconnect_connection") {
+      const connectionId = String(body.connection_id ?? "");
+      if (!connectionId) return fail("Falta el identificador de la conexión.");
+      const { data: connection, error: connectionError } = await admin
+        .from("git_provider_connections")
+        .select("id")
+        .eq("id", connectionId)
+        .eq("owner_id", user.id)
+        .maybeSingle();
+      if (connectionError || !connection) return fail("Conexión Git no encontrada.", 404);
+      const { error: credentialError } = await admin.rpc("git_delete_provider_credential", {
+        p_connection_id: connectionId,
+      });
+      if (credentialError) throw credentialError;
+      const { error: deleteError } = await admin.from("git_provider_connections")
+        .delete().eq("id", connectionId).eq("owner_id", user.id);
+      if (deleteError) throw deleteError;
+      return json({ disconnected: true });
+    }
+
     if (action === "list_connections") {
       const { data, error } = await admin.from("git_provider_connections")
         .select("id,provider,provider_username,instance_url,scopes,status,connected_at,last_verified_at")
