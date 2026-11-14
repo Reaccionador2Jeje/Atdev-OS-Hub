@@ -363,7 +363,7 @@ export default function GitCenter({ supabase, user }: Props) {
                 <div className="git-connection-row" key={connection.id}>
                   <div className="git-connection-mark">{connection.provider === 'github' ? <Github size={18} /> : <GitBranch size={18} />}</div>
                   <div className="git-connection-info"><strong>{connection.provider_username}</strong><span>{connection.provider} · {connection.scopes.length ? connection.scopes.join(', ') : 'permisos del proveedor'}</span></div>
-                  <span className="git-connected">Conectado</span>
+                  <span className={connection.write_access ? "git-write-enabled" : "git-write-readonly"}>{connection.write_access ? "Consentimiento de escritura" : "Solo lectura"}</span>
                   <button className="git-sync-button" onClick={() => void sync(connection)} disabled={busy !== ''}><RefreshCw size={14} /> {busy === 'sync-' + connection.id ? 'Sincronizando' : 'Sincronizar'}</button>
                   <button className="git-disconnect-button" onClick={() => void disconnectConnection(connection)} disabled={busy !== ''}>{busy === 'disconnect-' + connection.id ? 'Desconectando…' : 'Desconectar'}</button>
                 </div>
