@@ -45,7 +45,7 @@ Void Memingo OS Builder projects (starting with PondOS) can publish project mani
 
 ## Git Center
 
-Git Center connects GitHub and GitLab accounts separately from OS Hub sign-in, imports repositories, and browses branches, commits and text files. Provider OAuth setup is documented in [OAuth setup](docs/OAUTH_SETUP.md) and [Git provider setup](docs/GIT_PROVIDER_SETUP.md). GitVoid is experimental. The current repository browser is read-only; write operations require separately configured least-privilege permissions and confirmation flows. Git Center also manages scoped, one-time-display API tokens for Void Memingo.
+Git Center connects GitHub and GitLab accounts separately from OS Hub sign-in, imports repositories, browses branches/commits/files, creates branches, commits text-file changes, and opens Pull Requests / Merge Requests. Write access is off by default and requires additional OAuth consent plus per-operation confirmation. Connections can be disconnected, which removes locally stored Vault credentials; provider-side access revocation must also be done in GitHub or GitLab. GitVoid remains experimental. Git Center also manages scoped, one-time-display API tokens for Void Memingo.
 
 ## Deploy
 
