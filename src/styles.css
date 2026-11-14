@@ -208,3 +208,7 @@ main{max-width:1200px;margin:auto;padding:0 28px}.hero{min-height:430px;display:
 .git-review-fields small{align-self:center;color:#927d50;font-size:10px}
 .git-review-fields a{align-self:center;color:#28603d;font-size:11px;font-weight:700;text-decoration:none}
 @media(max-width:560px){.git-review-fields{grid-template-columns:1fr}.git-review-fields label:nth-child(3){grid-column:auto}.git-review-fields button{width:100%}}
+
+
+.git-disconnect-button{padding:7px 9px;border:1px solid #e4c8c8;border-radius:6px;background:#fff8f8;color:#995858;font-size:10px;font-weight:700;cursor:pointer}
+.git-disconnect-button:disabled{opacity:.5;cursor:wait}
