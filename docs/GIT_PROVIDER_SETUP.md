@@ -55,7 +55,7 @@ The existing “Sign in with GitHub” button authenticates a user account in Su
 - Git provider callback: `/functions/v1/git-oauth-callback`
 - Authenticated Git API: `/functions/v1/git-provider`
 
-The callback validates and consumes a random, one-time, ten-minute OAuth state stored server-side. GitLab authorization uses PKCE; its verifier is kept in the private database state record, never in the browser URL. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser. Disconnecting a provider deletes the local Vault secrets and imported repository records; it does not revoke the grant at the external provider.
+The callback validates and consumes a random, one-time, ten-minute OAuth state stored server-side. GitHub App and GitLab authorization use PKCE; the verifier is kept in the private database state record, never in the browser URL. Provider access/refresh tokens are stored in Supabase Vault and are never returned to the browser. Disconnecting a provider deletes the local Vault secrets and imported repository records; it does not revoke the grant at the external provider.
 
 ## GitVoid
 
