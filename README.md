@@ -67,3 +67,9 @@ El workflow de CI instala dependencias, ejecuta TypeScript y construye la aplica
 ## Licencia
 
 Consulta [LICENSE](LICENSE).
+
+## Walletie compatibility
+
+Walletie may support optional creator/community rewards in the future. Publishing, discovering, and using OS resources must not require credits.
+
+Walletie V1 currently accepts AtDev Cloud HS256 tokens only; other identity systems need the documented SSO bridge first. See the [Walletie integration matrix](https://github.com/Reaccionador2Jeje/Walletie/blob/main/docs/INTEGRATION_MATRIX.md).
